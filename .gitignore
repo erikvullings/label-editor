@@ -1,0 +1,13 @@
+dist
+node_modules
+tsconfig.tsbuildinfo
+.cache
+.env
+.dev
+.vscode
+.idea
+# schemas
+docker/traccar/logs/*.log*
+docker/traccar/data/*.db
+packages/gui/src/assets/indigo
+safr.db.*

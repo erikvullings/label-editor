@@ -1,0 +1,21 @@
+{
+  "name": "label editor",
+  "version": "0.0.1",
+  "private": "true",
+  "description": "Basic framework for developing mithril applications.",
+  "scripts": {
+    "clean": "pnpm --parallel run clean",
+    "start": "pnpm --parallel run dev",
+    "build": "pnpm recursive run build"
+  },
+  "keywords": [
+    "mithril",
+    "materialize-css",
+    "typescript"
+  ],
+  "author": "Erik Vullings <erik.vullings@tno.nl> (http://www.tno.nl)",
+  "license": "MIT",
+  "devDependencies": {
+    "pnpm": "^9.15.0"
+  }
+}

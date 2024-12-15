@@ -12,6 +12,8 @@ The application runs standalone in the browser. It does not use a server backend
 2. Open settings and setup your template. The template converts each data item to markdown, and the markdown is rendered as HTML. See the example below.
 3. Define your annotation object that you want to create. It is based on [mithril-ui-forms](https://github.com/erikvullings/mithril-ui-form), i.e. you provide a JSON object that is converted to a HTML form which you can use to generate your annotation object.
 
+![image](https://github.com/user-attachments/assets/bcd4fd11-5859-4d86-b481-25e8b1e380a2)
+
 ### Example object
 
 Assume you need to annotate news articles like the following:

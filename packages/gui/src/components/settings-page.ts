@@ -31,7 +31,7 @@ export const SettingsPage: MeiosisComponent = () => {
       // data = await fetchData(1, 3);
       if (data) {
         allPropertyKeys = extractPropertyKeys(data).map((id) => ({ id, label: id }));
-        console.log(allPropertyKeys);
+        // console.log(allPropertyKeys);
       }
 
       const { highlighters } = settings;

@@ -1,7 +1,7 @@
 import m from 'mithril';
 import { MeiosisComponent, routingSvc, t } from '../../services';
-import { LayoutForm, UIForm } from 'mithril-ui-form';
-import { Annotation, DataModel, Pages, Settings } from '../../models';
+import { LayoutForm, SlimdownView, UIForm, resolvePlaceholders } from 'mithril-ui-form';
+import { Annotation, Pages, Settings } from '../../models';
 import { createHighlighter } from '../../utils';
 import { FlatButton } from 'mithril-materialized';
 import { handleSelection } from './sidenav';
@@ -12,14 +12,10 @@ export const LabelEditor: MeiosisComponent = () => {
   let highlighter: undefined | ((data: Record<string, any>) => Record<string, any>);
 
   return {
-    view: ({
-      attrs: {
-        state,
-        actions: { setAnnotation },
-      },
-    }) => {
+    view: ({ attrs: { state, actions } }) => {
       const { settings = {} as Settings } = state;
-      if (!markdownTemplate) {
+      const { setAnnotation } = actions;
+      if (!markdownTemplate || markdownTemplate !== settings.template) {
         const { highlighters, template, labels } = settings;
         markdownTemplate = template;
         highlighter = highlighters && highlighters.length > 0 ? createHighlighter(highlighters) : undefined;
@@ -30,21 +26,17 @@ export const LabelEditor: MeiosisComponent = () => {
         }
       }
       const { data, annotation = {} as Annotation } = state;
+      console.table({ markdownTemplate });
+
+      const highlighted = data && highlighter ? highlighter(data) : data;
+      const md = markdownTemplate && resolvePlaceholders(markdownTemplate, highlighted);
+      console.log(md);
 
       return m(
         '#editor.row',
         { style: { textAlign: 'left', marginBottom: '60px' } },
         data && markdownTemplate
-          ? m(LayoutForm<any>, {
-              form: [
-                {
-                  type: 'md',
-                  value: markdownTemplate,
-                },
-              ],
-              obj: highlighter ? highlighter(data) : data,
-              readonly: true,
-            })
+          ? m(SlimdownView, { md })
           : m(
               'p.col.s12',
               `No preview possible - ${
@@ -65,7 +57,7 @@ export const LabelEditor: MeiosisComponent = () => {
                 m('br'),
                 m(FlatButton, {
                   label: t('UPLOAD'),
-                  onclick: () => handleSelection('upload_json', {} as DataModel),
+                  onclick: () => handleSelection('import', 'data', actions),
                   iconName: 'upload',
                 }),
               ]

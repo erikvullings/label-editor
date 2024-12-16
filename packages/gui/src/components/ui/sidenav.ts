@@ -1,55 +1,134 @@
 import m from 'mithril';
-import { MeiosisComponent, routingSvc, t } from '../../services';
-import { FlatButton, ModalPanel, padLeft } from 'mithril-materialized';
-import { DataModel, Page, Pages, EmptyDataModel } from '../../models';
+import { Actions, MeiosisComponent, routingSvc, t } from '../../services';
+import { FlatButton, ModalPanel } from 'mithril-materialized';
+import { Page, Pages, Settings } from '../../models';
 import { formatDate, isActivePage } from '../../utils';
-import { saveData } from '../../services/db';
+import { fetchAnnotations, fetchData, fetchSettings, getAnnotationCount, getDataCount } from '../../services/db';
 
-const handleFileUpload = () => (e: Event) => {
-  const fileInput = e.target as HTMLInputElement;
-  if (!fileInput.files || fileInput.files.length <= 0) return;
+const handleFileUpload =
+  <T>(done: (error: string | null, data: T | null) => Promise<void>) =>
+  (e: Event) => {
+    const fileInput = e.target as HTMLInputElement;
+    if (!fileInput.files || fileInput.files.length <= 0) return;
 
-  const reader = new FileReader();
-  reader.onload = async (e: ProgressEvent<FileReader>) => {
-    if (e.target && e.target.result) {
-      const data = JSON.parse(e.target.result.toString()) as any[];
-      if (Array.isArray(data)) {
-        // saveModel(result);
-        await saveData(data);
-        console.log(data);
-
-        routingSvc.switchTo(Pages.HOME);
-        m.redraw();
+    const reader = new FileReader();
+    reader.onload = (e: ProgressEvent<FileReader>) => {
+      if (e.target && e.target.result) {
+        try {
+          done(null, JSON.parse(e.target.result.toString()) as T);
+        } catch (e: any) {
+          done(e.toString(), null);
+        }
       } else {
-        console.error('Invalid file format');
+        done('Error: Data not imported', null);
       }
-    }
+    };
+
+    reader.readAsText(fileInput.files[0]);
   };
 
-  reader.readAsText(fileInput.files[0]);
-};
-
-export const handleSelection = (option: string, model: DataModel, saveModel?: (model: DataModel) => void) => {
+export const handleSelection = async (
+  option: 'clear' | 'import' | 'export',
+  dataType: 'data' | 'annotations' | 'settings',
+  actions: Actions
+) => {
   switch (option) {
     case 'clear':
-      console.log('CLEARING DATAS');
-      saveModel && saveModel(EmptyDataModel());
+      console.log('CLEARING DATA NOT IMPLEMENTED');
       break;
-    case 'download_json': {
-      const version = typeof model.version === 'undefined' ? 1 : ++model.version;
-      const dataStr =
-        'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify({ ...model, version }, null, 2));
+    case 'export': {
+      let dataStr: string;
+      switch (dataType) {
+        case 'data': {
+          const count = await getDataCount();
+          const data = await fetchData(1, count);
+          dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data));
+          break;
+        }
+        case 'annotations': {
+          const count = await getAnnotationCount();
+          const data = await fetchAnnotations(1, count);
+          dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data.map((d) => d.annotation)));
+          break;
+        }
+        case 'settings': {
+          const data = await fetchSettings();
+          dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data));
+          break;
+        }
+      }
       const dlAnchorElem = document.createElement('a');
       dlAnchorElem.setAttribute('href', dataStr);
-      dlAnchorElem.setAttribute('download', `${formatDate()}_v${padLeft(version, 3)}_crime_scripts.json`);
+      dlAnchorElem.setAttribute('download', `label-editor_${dataType}_${formatDate(new Date(), '')}.json`);
       dlAnchorElem.click();
       break;
     }
-    case 'upload_json': {
+    case 'import': {
       const fileInput = document.createElement('input');
       fileInput.type = 'file';
       fileInput.accept = '.json';
-      fileInput.onchange = handleFileUpload();
+      switch (dataType) {
+        case 'data': {
+          fileInput.onchange = handleFileUpload<any[]>(async (error, data) => {
+            if (error) {
+              M.toast({ html: error, classes: 'red' });
+              console.error(error);
+              return;
+            }
+            if (Array.isArray(data)) {
+              await actions.saveData(data);
+              routingSvc.switchTo(Pages.HOME);
+              M.toast({ html: 'Finished importing data successfully' });
+              m.redraw();
+            } else {
+              const error = 'Invalid file format';
+              M.toast({ html: error, classes: 'red' });
+              console.error(error);
+            }
+          });
+          break;
+        }
+        case 'annotations': {
+          fileInput.onchange = handleFileUpload<any[]>(async (error, data) => {
+            if (error) {
+              M.toast({ html: error, classes: 'red' });
+              console.error(error);
+              return;
+            }
+            if (Array.isArray(data)) {
+              await actions.saveAnnotations(data);
+              routingSvc.switchTo(Pages.HOME);
+              M.toast({ html: 'Finished importing annotations successfully' });
+              m.redraw();
+            } else {
+              const error = 'Invalid file format';
+              M.toast({ html: error, classes: 'red' });
+              console.error(error);
+            }
+          });
+          break;
+        }
+        case 'settings': {
+          fileInput.onchange = handleFileUpload<Settings>(async (error, data) => {
+            if (error) {
+              M.toast({ html: error, classes: 'red' });
+              console.error(error);
+              return;
+            }
+            if (data && !Array.isArray(data)) {
+              await actions.saveSettings(data);
+              routingSvc.switchTo(Pages.HOME);
+              M.toast({ html: 'Finished importing settings successfully' });
+              m.redraw();
+            } else {
+              const error = 'Invalid file format';
+              M.toast({ html: error, classes: 'red' });
+              console.error(error);
+            }
+          });
+          break;
+        }
+      }
       fileInput.click();
       break;
     }
@@ -58,13 +137,9 @@ export const handleSelection = (option: string, model: DataModel, saveModel?: (m
 
 export const SideNav: MeiosisComponent = () => {
   return {
-    view: ({
-      attrs: {
-        state,
-        actions: { saveModel, changePage },
-      },
-    }) => {
-      const { model, page } = state;
+    view: ({ attrs: { state, actions } }) => {
+      const { page } = state;
+      const { changePage } = actions;
       // const roleIcon = role === 'user' ? 'person' : role === 'editor' ? 'edit' : 'manage_accounts';
 
       const isActive = isActivePage(page);
@@ -76,7 +151,6 @@ export const SideNav: MeiosisComponent = () => {
             'ul#slide-out.sidenav',
             {
               oncreate: ({ dom }) => {
-                console.log(dom);
                 M.Sidenav.init(dom);
               },
             },
@@ -111,17 +185,19 @@ export const SideNav: MeiosisComponent = () => {
             m(
               'li',
               m(FlatButton, {
-                label: t('DOWNLOAD'),
-                onclick: () => handleSelection('download_json', model, saveModel),
+                label: t('EXPORT'),
+                // onclick: () => handleSelection('export', 'data'),
                 iconName: 'download',
+                modalId: 'export',
               })
             ),
             m(
               'li',
               m(FlatButton, {
-                label: t('UPLOAD'),
-                onclick: () => handleSelection('upload_json', model, saveModel),
+                label: t('IMPORT'),
+                // onclick: () => handleSelection('import', 'data'),
                 iconName: 'upload',
+                modalId: 'import',
               })
             )
             // m(
@@ -160,17 +236,46 @@ export const SideNav: MeiosisComponent = () => {
           )
         ),
         m(ModalPanel, {
-          id: 'clear_model',
-          title: t('DELETE_ITEM', 'TITLE', { item: t('MODEL') }),
-          description: t('DELETE_ITEM', 'DESCRIPTION', { item: t('MODEL').toLowerCase() }),
+          id: 'import',
+          title: t('IMPORT'),
+          description: m('.row', m('.col.s12', m('p', 'Select the data you wish to import'))),
           buttons: [
-            { label: t('CANCEL'), iconName: 'cancel' },
             {
-              label: t('DELETE'),
-              iconName: 'delete',
-              onclick: () => {
-                saveModel(EmptyDataModel());
-              },
+              label: t('DATA'),
+              iconName: 'data_array',
+              onclick: () => handleSelection('import', 'data', actions),
+            },
+            {
+              label: t('ANNOTATION', 2),
+              iconName: 'dataset',
+              onclick: () => handleSelection('import', 'annotations', actions),
+            },
+            {
+              label: t('SETTINGS', 'TITLE'),
+              iconName: 'data_object',
+              onclick: () => handleSelection('import', 'settings', actions),
+            },
+          ],
+        }),
+        m(ModalPanel, {
+          id: 'export',
+          title: t('EXPORT'),
+          description: m('.row', m('.col.s12', m('p', 'Select the data you wish to export'))),
+          buttons: [
+            {
+              label: t('DATA'),
+              iconName: 'data_array',
+              onclick: () => handleSelection('export', 'data', actions),
+            },
+            {
+              label: t('ANNOTATION', 2),
+              iconName: 'dataset',
+              onclick: () => handleSelection('export', 'annotations', actions),
+            },
+            {
+              label: t('SETTINGS', 'TITLE'),
+              iconName: 'data_object',
+              onclick: () => handleSelection('export', 'settings', actions),
             },
           ],
         }),

@@ -9,7 +9,6 @@ interface PaginationProps {
 }
 
 export const Pagination: FactoryComponent<PaginationProps> = () => {
-  let inputPage = '';
   let showInput = false;
 
   return {
@@ -17,12 +16,10 @@ export const Pagination: FactoryComponent<PaginationProps> = () => {
       const isFirstPage = currentPage === 1;
       const isLastPage = currentPage === totalPages;
 
-      const handlePageInput = async () => {
-        const newPage = parseInt(inputPage, 10);
+      const handlePageInput = async (newPage: number) => {
         if (!isNaN(newPage) && newPage >= 1 && newPage <= totalPages) {
           await onPageChange(newPage);
           showInput = false;
-          inputPage = '';
         }
       };
 
@@ -85,7 +82,7 @@ export const Pagination: FactoryComponent<PaginationProps> = () => {
                     initialValue: currentPage,
                     onchange: async (v) => {
                       showInput = false;
-                      await onPageChange(v);
+                      await handlePageInput(v);
                     },
                   })
                 : m(

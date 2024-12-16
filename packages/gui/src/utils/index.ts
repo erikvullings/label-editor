@@ -29,9 +29,9 @@ export const debounce = (func: (...args: any) => void, timeout: number) => {
   };
 };
 
-export const formatDate = (date: number | Date = new Date()) => {
+export const formatDate = (date: number | Date = new Date(), separator = '-') => {
   const d = new Date(date);
-  return `${d.getFullYear()}-${padLeft(d.getMonth() + 1)}-${padLeft(d.getDate())}`;
+  return `${d.getFullYear()}${separator}${padLeft(d.getMonth() + 1)}${separator}${padLeft(d.getDate())}`;
 };
 
 /**

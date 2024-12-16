@@ -15,8 +15,8 @@ importers:
   packages/gui:
     dependencies:
       idb:
-        specifier: ^8.0.0
-        version: 8.0.0
+        specifier: ^8.0.1
+        version: 8.0.1
       material-icons:
         specifier: ^1.13.12
         version: 1.13.12
@@ -33,8 +33,8 @@ importers:
         specifier: ^1.2.2
         version: 1.2.2
       mithril-ui-form:
-        specifier: ^1.10.13
-        version: 1.10.13
+        specifier: ^1.10.14
+        version: 1.10.14
       papaparse:
         specifier: ^5.4.1
         version: 5.4.1
@@ -968,8 +968,8 @@ packages:
     resolution: {integrity: sha512-v3MXnZAcvnywkTUEZomIActle7RXXeedOR31wwl7VlyoXO4Qi9arvSenNQWne1TcRwhCL1HwLI21bEqdpj8/rA==}
     engines: {node: '>=0.10.0'}
 
-  idb@8.0.0:
-    resolution: {integrity: sha512-l//qvlAKGmQO31Qn7xdzagVPPaHTxXx199MhrAFuVBTPqydcPYBWjkrbv4Y0ktB+GmWOiwHl237UUOrLmQxLvw==}
+  idb@8.0.1:
+    resolution: {integrity: sha512-EkBCzUZSdhJV8PxMSbeEV//xguVKZu9hZZulM+2gHXI0t2hGVU3eYE6/XnH77DS6FM2FY8wl17aDcu9vXpvLWQ==}
 
   immutable@5.0.3:
     resolution: {integrity: sha512-P8IdPQHq3lA1xVeBRi5VPqUm5HDgKnx0Ru51wZz5mjxHr5n3RWhjIpOFU7ybkUxfB+5IToy+OLaHYDBIWsv+uw==}
@@ -1165,8 +1165,8 @@ packages:
   mithril-ui-form-plugin@0.6.7:
     resolution: {integrity: sha512-tm7rQususQQZKdDxCR4OcyrZW3RmkYhCU1GRkKTTNjIv24apDi6CQ4tBgm/+Q4zTwvedtYSG0El4SIkQrexkBA==}
 
-  mithril-ui-form@1.10.13:
-    resolution: {integrity: sha512-g43YSGo8QPjOLQvcj1JPWF93y4TYXMmiot9Sx2Bv5yJ3HDgyglIULrUm4/9eyS0lQWrMZZzBjailA0Dqd11dHg==}
+  mithril-ui-form@1.10.14:
+    resolution: {integrity: sha512-a2vJdIQD983ALORTjpMmskLu8udkhxtH35dBT23SIENlYVGyWncleCCTg5zyKS7TO0uNlppIqCdfH5CUCAEjOw==}
 
   mithril@2.2.11:
     resolution: {integrity: sha512-l7WOWzoc4m6QILj5Ft/uVlZ849h2zt53flbZdG9oLkP3OzitJrgLyoa1YRaGPvQuV5zfaIXVu7/o5zikoh/c6w==}
@@ -2748,7 +2748,7 @@ snapshots:
     dependencies:
       safer-buffer: 2.1.2
 
-  idb@8.0.0: {}
+  idb@8.0.1: {}
 
   immutable@5.0.3: {}
 
@@ -2902,7 +2902,7 @@ snapshots:
 
   mithril-ui-form-plugin@0.6.7: {}
 
-  mithril-ui-form@1.10.13:
+  mithril-ui-form@1.10.14:
     dependencies:
       mithril-ui-form-plugin: 0.6.7
       slimdown-js: 0.7.5

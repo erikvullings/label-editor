@@ -36,6 +36,10 @@ export const messagesNL: typeof messages = {
   AUTHORS: 'Auteurs',
   LINK: 'Link',
   TYPE: 'Type',
+  IMPORT: 'Import',
+  EXPORT: 'Export',
+  DATA: 'DATA',
+  ANNOTATION: { 1: 'Annotation', n: 'Annotations' },
   HITS: {
     1: '1 hit',
     n: '{n} hits',

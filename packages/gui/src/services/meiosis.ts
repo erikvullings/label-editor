@@ -2,10 +2,21 @@ import { meiosisSetup } from 'meiosis-setup';
 import { MeiosisCell, MeiosisConfig, Service } from 'meiosis-setup/types';
 import m, { FactoryComponent } from 'mithril';
 import { routingSvc } from '.';
-import { Annotation, Data, DataModel, Pages, Settings } from '../models';
+import { Annotation, Data, Pages, Settings } from '../models';
 import { User, UserRole } from './login-service';
 import { scrollToTop } from '../utils';
-import { fetchAnnotations, fetchData, fetchSettings, getDataCount, saveAnnotation, saveSettings } from './db';
+import {
+  fetchAnnotations,
+  fetchData,
+  fetchSettings,
+  getAnnotationsForArticle,
+  getArticleWithAnnotations,
+  getDataCount,
+  saveAnnotation,
+  saveAnnotations,
+  saveData,
+  saveSettings,
+} from './db';
 
 // const settingsSvc = restServiceFactory<Settings>('settings');
 const USER_ROLE = 'USER_ROLE';
@@ -14,7 +25,6 @@ export const APP_TITLE_SHORT = 'Labeler';
 
 export interface State {
   page: Pages;
-  model: DataModel;
   loggedInUser?: User;
   role: UserRole;
   settings: Settings;
@@ -40,6 +50,8 @@ export interface Actions {
     query?: Record<string, string | number | undefined>
   ) => void;
   saveSettings: (settings: Settings) => Promise<void>;
+  saveData: (articles: any[]) => Promise<void>;
+  saveAnnotations: (annotations: Annotation[]) => Promise<void>;
   setRole: (role: UserRole) => void;
   setSearchFilter: (searchFilter?: string) => Promise<void>;
   setAnnotator: (annotator: string) => void;
@@ -55,7 +67,7 @@ export type MeiosisComponent<T extends { [key: string]: any } = {}> = FactoryCom
   options?: T;
 }>;
 
-export const appActions: (cell: MeiosisCell<State>) => Actions = ({ update /* states */ }) => ({
+export const appActions: (cell: MeiosisCell<State>) => Actions = ({ update, states }) => ({
   // addDucks: (cell, amount) => {
   //   cell.update({ ducks: (value) => value + amount });
   // },
@@ -81,6 +93,23 @@ export const appActions: (cell: MeiosisCell<State>) => Actions = ({ update /* st
       settings: () => settings,
     });
   },
+  saveData: async (articles: any[]) => {
+    await saveData(articles);
+    const dataCount = await getDataCount();
+    const data = await fetchData(1, 1);
+    update({
+      data: () => (data && data.length > 0 ? data[0] : undefined),
+      dataCount,
+    });
+  },
+  saveAnnotations: async (annotations: Annotation[]) => {
+    const { data } = states();
+    await saveAnnotations(annotations);
+    const annotation = data ? await getAnnotationsForArticle(data) : undefined;
+    update({
+      annotation: () => (annotation && annotation.length > 0 ? annotation[0] : undefined),
+    });
+  },
   setSearchFilter: async (searchFilter?: string) => {
     if (searchFilter) {
       // localStorage.setItem(SEARCH_FILTER_KEY, searchFilter);
@@ -100,12 +129,14 @@ export const appActions: (cell: MeiosisCell<State>) => Actions = ({ update /* st
     update({ annotation: () => annotation });
   },
   refreshData: async (currentRowId: number) => {
-    const data = await fetchData(currentRowId, 1);
-    const annotations = await fetchAnnotations(currentRowId, 1);
+    const { article, annotations } = await getArticleWithAnnotations(currentRowId);
+
+    // const data = await fetchData(currentRowId, 1);
+    // const annotations = await fetchAnnotations(currentRowId, 1);
     update({
       currentRowId,
-      data: () => (data && data.length >= 1 ? data[0] : undefined),
-      annotation: () => (annotations && annotations.length >= 1 ? annotations[0].annotation : undefined),
+      data: () => article,
+      annotation: () => (annotations && annotations.length >= 1 ? annotations[0] : undefined),
     });
   },
   login: () => {},
@@ -143,7 +174,7 @@ cells.map(() => {
 const loadData = () => {
   // const role = (localStorage.getItem(USER_ROLE) || 'user') as UserRole;
   fetchSettings().then(async (settings) => {
-    const data = await fetchData(1, 1);
+    const { article, annotations } = await getArticleWithAnnotations(1);
     const dataCount = await getDataCount();
     // console.log(data);
     // console.log(settings);
@@ -151,7 +182,8 @@ const loadData = () => {
       role: 'admin',
       dataCount,
       settings: () => settings,
-      data: () => (data && data.length > 0 ? data[0] : undefined),
+      data: () => article,
+      annotation: () => (annotations && annotations.length > 0 ? annotations[0] : undefined),
     });
   });
 };

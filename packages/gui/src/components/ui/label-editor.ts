@@ -25,17 +25,14 @@ export const LabelEditor: MeiosisComponent = () => {
           labelForm = undefined;
         }
       }
-      const { data, annotation = {} as Annotation } = state;
-      console.table({ markdownTemplate });
-
+      const { article: data, annotation = {} as Annotation } = state;
       const highlighted = data && highlighter ? highlighter(data) : data;
       const md = markdownTemplate && resolvePlaceholders(markdownTemplate, highlighted);
-      console.log(md);
 
       return m(
         '#editor.row',
         { style: { textAlign: 'left', marginBottom: '60px' } },
-        data && markdownTemplate
+        md
           ? m(SlimdownView, { md })
           : m(
               'p.col.s12',

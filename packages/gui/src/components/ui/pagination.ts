@@ -5,14 +5,14 @@ interface PaginationProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (newPage: number) => Promise<void>;
-  onFastForward?: () => Promise<void>; // Optional fast forward handler
+  onFindAnnotation?: (next?: boolean) => Promise<void>; // Optional fast forward handler
 }
 
 export const Pagination: FactoryComponent<PaginationProps> = () => {
   let showInput = false;
 
   return {
-    view: ({ attrs: { currentPage, totalPages, onPageChange, onFastForward } }) => {
+    view: ({ attrs: { currentPage, totalPages, onPageChange, onFindAnnotation } }) => {
       const isFirstPage = currentPage === 1;
       const isLastPage = currentPage === totalPages;
 
@@ -53,11 +53,10 @@ export const Pagination: FactoryComponent<PaginationProps> = () => {
             [
               // Fast back button
               m(FlatButton, {
-                iconName: 'first_page',
-                disabled: isFirstPage,
+                iconName: 'keyboard_double_arrow_left',
                 onclick: async () => {
-                  if (!isFirstPage) {
-                    await onPageChange(1);
+                  if (onFindAnnotation) {
+                    await onFindAnnotation(false);
                   }
                 },
               }),
@@ -117,11 +116,11 @@ export const Pagination: FactoryComponent<PaginationProps> = () => {
 
               // Fast forward button
               m(FlatButton, {
-                iconName: 'last_page',
-                disabled: !onFastForward,
+                iconName: 'keyboard_double_arrow_right',
+                disabled: !onFindAnnotation,
                 onclick: async () => {
-                  if (onFastForward) {
-                    await onFastForward();
+                  if (onFindAnnotation) {
+                    await onFindAnnotation();
                   }
                 },
               }),

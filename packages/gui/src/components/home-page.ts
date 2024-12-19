@@ -3,7 +3,6 @@ import { Pages } from '../models';
 import { MeiosisComponent } from '../services';
 import { LabelEditor } from './ui/label-editor';
 import { Pagination } from './ui/pagination';
-import { getAnnotationCount, getDataCount } from '../services/db';
 
 export const HomePage: MeiosisComponent = () => {
   return {
@@ -12,17 +11,13 @@ export const HomePage: MeiosisComponent = () => {
         actions: { setPage, refreshData },
       },
     }) => {
-      await refreshData(1);
-      const count = await getDataCount();
-      if (count) console.log(count);
-      // data = await fetchData();
-      // console.log(data);
+      await refreshData(0);
       setPage(Pages.HOME);
     },
     view: ({ attrs }) => {
       const {
-        state: { data, dataCount, currentRowId },
-        actions: { refreshData },
+        state: { article: data, dataCount, currentRowId, annotationId },
+        actions: { refreshData, findAnnotation },
       } = attrs;
       if (!data) {
         refreshData(1);
@@ -38,12 +33,8 @@ export const HomePage: MeiosisComponent = () => {
             onPageChange: async (newPage) => {
               await refreshData(newPage);
             },
-            onFastForward: async () => {
-              // Goto last annotation
-              const lastId = await getAnnotationCount();
-              if (typeof lastId === 'number') {
-                await refreshData(lastId);
-              }
+            onFindAnnotation: async (next) => {
+              await findAnnotation(annotationId, next);
             },
           })
         ),

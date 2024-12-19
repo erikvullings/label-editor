@@ -1,5 +1,5 @@
 {
-  "name": "labelerr",
+  "name": "labeler",
   "version": "0.0.1",
   "description": "A webapp for labelling data in your browser, no setup required.",
   "scripts": {

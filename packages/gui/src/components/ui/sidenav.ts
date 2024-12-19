@@ -292,7 +292,7 @@ export const SideNavTrigger: MeiosisComponent<{}> = () => {
         {
           href: '#!',
           style: {
-            position: 'relative',
+            position: 'fixed',
             top: '20px',
             marginLeft: '20px',
           },

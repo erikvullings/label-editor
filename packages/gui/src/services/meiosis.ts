@@ -6,12 +6,12 @@ import { Annotation, Data, Pages, Settings } from '../models';
 import { User, UserRole } from './login-service';
 import { scrollToTop } from '../utils';
 import {
-  fetchAnnotations,
   fetchData,
   fetchSettings,
-  getAnnotationsForArticle,
+  findAnnotatedArticle,
   getArticleWithAnnotations,
   getDataCount,
+  ID,
   saveAnnotation,
   saveAnnotations,
   saveData,
@@ -36,8 +36,12 @@ export interface State {
   currentRowId: number;
   /** Initials of currently active annotator  */
   annotator?: string;
-  /** Currently active data item */
-  data?: Data;
+  /** Annotation ID, based on current keypath (which may vary between datasets) */
+  annotationId?: string | number;
+  /** Article ID, based on current keypath (which may vary between datasets) */
+  articleId?: string | number;
+  /** Currently active article */
+  article?: Data;
   /** Currently active annotation item */
   annotation?: Annotation;
 }
@@ -56,6 +60,7 @@ export interface Actions {
   setSearchFilter: (searchFilter?: string) => Promise<void>;
   setAnnotator: (annotator: string) => void;
   setAnnotation: (id: number, annotation: Annotation) => Promise<void>;
+  findAnnotation: (id?: ID, next?: boolean) => Promise<void>;
   /** Update the current data item */
   refreshData: (id: number) => Promise<void>;
   login: () => void;
@@ -67,7 +72,7 @@ export type MeiosisComponent<T extends { [key: string]: any } = {}> = FactoryCom
   options?: T;
 }>;
 
-export const appActions: (cell: MeiosisCell<State>) => Actions = ({ update, states }) => ({
+export const appActions: (cell: MeiosisCell<State>) => Actions = ({ update /* states */ }) => ({
   // addDucks: (cell, amount) => {
   //   cell.update({ ducks: (value) => value + amount });
   // },
@@ -93,22 +98,18 @@ export const appActions: (cell: MeiosisCell<State>) => Actions = ({ update, stat
       settings: () => settings,
     });
   },
-  saveData: async (articles: any[]) => {
-    await saveData(articles);
+  saveData: async (articles: any[], dataId: string = '_id') => {
+    await saveData(articles, dataId);
     const dataCount = await getDataCount();
     const data = await fetchData(1, 1);
+    console.log(`Fetching data: ${data}`);
     update({
-      data: () => (data && data.length > 0 ? data[0] : undefined),
+      article: () => (data && data.length > 0 ? data[0] : undefined),
       dataCount,
     });
   },
   saveAnnotations: async (annotations: Annotation[]) => {
-    const { data } = states();
     await saveAnnotations(annotations);
-    const annotation = data ? await getAnnotationsForArticle(data) : undefined;
-    update({
-      annotation: () => (annotation && annotation.length > 0 ? annotation[0] : undefined),
-    });
   },
   setSearchFilter: async (searchFilter?: string) => {
     if (searchFilter) {
@@ -128,14 +129,27 @@ export const appActions: (cell: MeiosisCell<State>) => Actions = ({ update, stat
     await saveAnnotation(fromId, annotation);
     update({ annotation: () => annotation });
   },
+  findAnnotation: async (id?: ID, next = true) => {
+    const { index, article, annotation, annotationId } = await findAnnotatedArticle(id, next);
+    if (index >= 0) {
+      update({
+        currentRowId: index,
+        article: () => article,
+        annotation: () => annotation,
+        annotationId,
+      });
+    }
+  },
   refreshData: async (currentRowId: number) => {
-    const { article, annotations } = await getArticleWithAnnotations(currentRowId);
+    console.log(`Current row id: ${currentRowId}`);
+    const { article, articleId, annotations } = await getArticleWithAnnotations(currentRowId);
 
     // const data = await fetchData(currentRowId, 1);
     // const annotations = await fetchAnnotations(currentRowId, 1);
     update({
+      articleId,
       currentRowId,
-      data: () => article,
+      article: () => article,
       annotation: () => (annotations && annotations.length >= 1 ? annotations[0] : undefined),
     });
   },
@@ -174,15 +188,16 @@ cells.map(() => {
 const loadData = () => {
   // const role = (localStorage.getItem(USER_ROLE) || 'user') as UserRole;
   fetchSettings().then(async (settings) => {
-    const { article, annotations } = await getArticleWithAnnotations(1);
+    const { article, articleId, annotations } = await getArticleWithAnnotations(0);
     const dataCount = await getDataCount();
     // console.log(data);
     // console.log(settings);
     cells().update({
       role: 'admin',
       dataCount,
+      articleId,
       settings: () => settings,
-      data: () => article,
+      article: () => article,
       annotation: () => (annotations && annotations.length > 0 ? annotations[0] : undefined),
     });
   });

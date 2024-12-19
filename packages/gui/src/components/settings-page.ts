@@ -16,7 +16,7 @@ export const SettingsPage: MeiosisComponent = () => {
   return {
     oninit: async ({
       attrs: {
-        state: { data },
+        state: { article: data },
         actions: { setPage, refreshData },
       },
     }) => {
@@ -27,7 +27,7 @@ export const SettingsPage: MeiosisComponent = () => {
     },
     view: ({ attrs }) => {
       const { state, actions } = attrs;
-      const { settings = {} as Settings, data } = state;
+      const { settings = {} as Settings, article: data } = state;
       // data = await fetchData(1, 3);
       if (data) {
         allPropertyKeys = extractPropertyKeys(data).map((id) => ({ id, label: id }));

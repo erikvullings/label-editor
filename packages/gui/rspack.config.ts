@@ -11,11 +11,13 @@ import {
 
 config();
 
-const devMode = (process.env as any).NODE_ENV === 'development';
-const isProduction = !devMode;
+const isDev = (process.env as any).NODE_ENV === 'development';
+const isProduction = !isDev;
 const outputPath = resolve(__dirname, isProduction ? '../../docs' : 'dist');
 const SERVER = process.env.SERVER || 'localhost';
-const publicPath = isProduction ? 'https://github.io/A webapp for labelling data in your browser, no setup required./label editor' : '';
+const publicPath = isProduction
+  ? 'https://github.io/A webapp for labelling data in your browser, no setup required./label editor'
+  : '';
 const APP_TITLE = 'Label Editor';
 const APP_DESC = 'A webapp for labelling data in your browser, no setup required.';
 const APP_PORT = 3366;
@@ -46,7 +48,7 @@ const configuration: Configuration = {
       title: APP_TITLE,
       publicPath,
       scriptLoading: 'defer',
-      minify: !devMode,
+      minify: !isDev,
       favicon: './src/favicon.ico',
       meta: {
         viewport: 'width=device-width, initial-scale=1',
@@ -64,13 +66,11 @@ const configuration: Configuration = {
     new HotModuleReplacementPlugin(),
     new LightningCssMinimizerRspackPlugin(),
     new SwcJsMinimizerRspackPlugin({
-      minimizerOptions: devMode
-        ? {}
-        : {
-            compress: true,
-            minify: true,
-            // mangle: true,
-          },
+      minimizerOptions: {
+        compress: isProduction,
+        minify: isProduction,
+        mangle: isProduction,
+      },
     }),
   ],
   resolve: {
@@ -82,14 +82,38 @@ const configuration: Configuration = {
         test: /\.ts$/,
         exclude: [/node_modules/],
         loader: 'builtin:swc-loader',
-        options: {
-          sourceMap: true,
-          jsc: {
-            parser: {
-              syntax: 'typescript',
+        use: [
+          {
+            loader: 'builtin:swc-loader',
+            options: {
+              sourceMap: true,
+              jsc: {
+                parser: {
+                  syntax: 'typescript',
+                  tsx: true,
+                },
+                transform: {
+                  react: {
+                    runtime: 'automatic',
+                    development: isDev,
+                    refresh: isDev,
+                  },
+                },
+              },
+              env: {
+                targets: ['chrome >= 87', 'edge >= 88', 'firefox >= 78', 'safari >= 14'],
+              },
             },
           },
-        },
+        ],
+        // options: {
+        //   sourceMap: true,
+        //   jsc: {
+        //     parser: {
+        //       syntax: 'typescript',
+        //     },
+        //   },
+        // },
         type: 'javascript/auto',
       },
       {

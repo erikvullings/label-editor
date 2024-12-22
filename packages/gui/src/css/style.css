@@ -656,3 +656,7 @@ a.waves-effect.waves-teal.btn-flat.selected {
 .no-margins > input[type='number'] {
   margin-bottom: 0;
 }
+
+code p {
+  margin: 0;
+}

@@ -1,8 +1,10 @@
 import { messages } from '.';
 
+const aboutMd = ``;
+
 export const messagesNL: typeof messages = {
   HOME: { TITLE: 'home', ROUTE: '/home' },
-  ABOUT: { TITLE: 'over de app', ROUTE: '/over' },
+  ABOUT: { TITLE: 'over de app', ROUTE: '/over', BODY: aboutMd },
   SETTINGS: { TITLE: 'Instellingen', ROUTE: '/instellingen' },
   LANDING: { TITLE: 'Introductie', ROUTE: '/' },
   USER: 'Gebruiker',

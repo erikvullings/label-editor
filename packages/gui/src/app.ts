@@ -8,9 +8,9 @@ import { i18n } from './services';
 
 document.documentElement.setAttribute('lang', 'en');
 
-window.onbeforeunload = (e) => {
-  e.preventDefault(); // This is necessary for older browsers
-};
+// window.onbeforeunload = (e) => {
+//   e.preventDefault(); // This is necessary for older browsers
+// };
 
 i18n.addOnChangeListener((locale: string) => {
   console.log(`Language loaded: ${locale}`);

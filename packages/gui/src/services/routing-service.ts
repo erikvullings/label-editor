@@ -32,21 +32,21 @@ class RoutingService {
         component: HomePage,
       },
       {
+        id: Pages.SETTINGS,
+        icon: 'settings',
+        // iconClass: 'blue-text',
+        title: t('SETTINGS', 'TITLE'),
+        route: t('SETTINGS', 'ROUTE'),
+        visible: true,
+        component: SettingsPage,
+      },
+      {
         id: Pages.ABOUT,
         icon: 'info',
         title: t('ABOUT', 'TITLE'),
         route: t('ABOUT', 'ROUTE'),
         visible: true,
         component: AboutPage,
-      },
-      {
-        id: Pages.SETTINGS,
-        icon: 'settings',
-        // iconClass: 'blue-text',
-        title: t('SETTINGS', 'TITLE'),
-        route: t('SETTINGS', 'ROUTE'),
-        visible: ({ role }) => role === 'admin',
-        component: SettingsPage,
       },
     ];
     // console.log(JSON.stringify(routes, null, 2));

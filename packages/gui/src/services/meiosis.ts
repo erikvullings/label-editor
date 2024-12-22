@@ -3,12 +3,13 @@ import { MeiosisCell, MeiosisConfig, Service } from 'meiosis-setup/types';
 import m, { FactoryComponent } from 'mithril';
 import { routingSvc } from '.';
 import { Annotation, Data, Pages, Settings } from '../models';
-import { User, UserRole } from './login-service';
+// import { User, UserRole } from './login-service';
 import { scrollToTop } from '../utils';
 import {
   fetchData,
   fetchSettings,
   findAnnotatedArticle,
+  getAnnotationCount,
   getArticleWithAnnotations,
   getDataCount,
   ID,
@@ -25,13 +26,15 @@ export const APP_TITLE_SHORT = 'Labeler';
 
 export interface State {
   page: Pages;
-  loggedInUser?: User;
-  role: UserRole;
+  // loggedInUser?: User;
+  // role: UserRole;
   settings: Settings;
   searchFilter: string;
   searchResults: any[];
   /** Number of data items */
   dataCount: number;
+  /** Number of annotations */
+  annotationCount: number;
   /** Current index */
   currentRowId: number;
   /** Initials of currently active annotator  */
@@ -56,14 +59,12 @@ export interface Actions {
   saveSettings: (settings: Settings) => Promise<void>;
   saveData: (articles: any[], keypath?: string) => Promise<void>;
   saveAnnotations: (annotations: Annotation[]) => Promise<void>;
-  setRole: (role: UserRole) => void;
   setSearchFilter: (searchFilter?: string) => Promise<void>;
   setAnnotator: (annotator: string) => void;
   setAnnotation: (id: number, annotation: Annotation) => Promise<void>;
   findAnnotation: (id?: ID, next?: boolean) => Promise<void>;
   /** Update the current data item */
   refreshData: (id: number) => Promise<void>;
-  login: () => void;
 }
 
 export type MeiosisComponent<T extends { [key: string]: any } = {}> = FactoryComponent<{
@@ -110,6 +111,7 @@ export const appActions: (cell: MeiosisCell<State>) => Actions = ({ update /* st
   },
   saveAnnotations: async (annotations: Annotation[]) => {
     await saveAnnotations(annotations);
+    update({ annotationCount: annotations.length });
   },
   setSearchFilter: async (searchFilter?: string) => {
     if (searchFilter) {
@@ -119,15 +121,11 @@ export const appActions: (cell: MeiosisCell<State>) => Actions = ({ update /* st
       update({ searchFilter: undefined });
     }
   },
-  setRole: (role) => {
-    localStorage.setItem(USER_ROLE, role);
-    update({ role });
-  },
   setAnnotator: (annotator: string) => update({ annotator }),
   setAnnotation: async (fromId: number, annotation: Annotation) => {
     console.log(annotation);
-    await saveAnnotation(fromId, annotation);
-    update({ annotation: () => annotation });
+    const annotationCount = await saveAnnotation(fromId, annotation);
+    update({ annotation: () => annotation, annotationCount });
   },
   findAnnotation: async (id?: ID, next = true) => {
     const { index, article, annotation, annotationId } = await findAnnotatedArticle(id, next);
@@ -153,7 +151,6 @@ export const appActions: (cell: MeiosisCell<State>) => Actions = ({ update /* st
       annotation: () => (annotations && annotations.length >= 1 ? annotations[0] : undefined),
     });
   },
-  login: () => {},
 });
 
 export const setSearchResults: Service<State> = {
@@ -170,9 +167,9 @@ const config: MeiosisConfig<State> = {
   app: {
     initial: {
       page: Pages.HOME,
-      loggedInUser: undefined,
-      role: 'user',
-      currentRowId: 1,
+      currentRowId: 0,
+      dataCount: 0,
+      annotationCount: 0,
       settings: {} as Settings,
     } as State,
     services: [setSearchResults],
@@ -190,11 +187,12 @@ const loadData = () => {
   fetchSettings().then(async (settings) => {
     const { article, articleId, annotations } = await getArticleWithAnnotations(0);
     const dataCount = await getDataCount();
-    // console.log(data);
+    const annotationCount = await getAnnotationCount();
+    // console.log(data);  64. 900
     // console.log(settings);
     cells().update({
-      role: 'admin',
       dataCount,
+      annotationCount,
       articleId,
       settings: () => settings,
       article: () => article,

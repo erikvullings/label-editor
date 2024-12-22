@@ -221,18 +221,23 @@ export const extractPropertyKeys = (obj: any, parentKey: string = ''): string[] 
 const validateHighlighter = (h: Highlighter): boolean =>
   h.properties &&
   h.properties.length > 0 &&
-  typeof h.color !== 'undefined' &&
   typeof h.type !== 'undefined' &&
-  typeof h.value !== 'undefined';
+  typeof h.value !== 'undefined' &&
+  (typeof h.color !== 'undefined' || (h.type === 'transform' && typeof h.replace !== 'undefined'));
 
 export const createHighlighter = (highlighters: Highlighter[]) => {
   // Validate and precompile highlighters
-  const validHighlighters = highlighters.filter(validateHighlighter).map((h) => {
-    if (h.type === 'regex') {
-      return { ...h, value: new RegExp(h.value, 'gi') };
-    }
-    return h;
-  });
+  const validHighlighters = highlighters
+    .sort((h) => (h.type !== 'transform' ? 1 : -1))
+    .filter(validateHighlighter)
+    .map((h) => {
+      if (h.type !== 'string') {
+        console.table(h);
+        console.log(new RegExp(h.value, 'gi'));
+        return { ...h, value: new RegExp(h.value, 'gi') };
+      }
+      return h;
+    });
 
   const highlightValue = (value: string, highlighter: Highlighter): string => {
     // Helper function to skip HTML tags during highlighting
@@ -250,7 +255,7 @@ export const createHighlighter = (highlighters: Highlighter[]) => {
     };
 
     if (highlighter.type === 'regex') {
-      const regex = highlighter.value as unknown as RegExp;
+      const regex = highlighter.value;
       return skipHTML(value, (text) =>
         text.replace(regex, (match) => `<mark style="background-color: ${highlighter.color};">${match}</mark>`)
       );
@@ -259,6 +264,10 @@ export const createHighlighter = (highlighters: Highlighter[]) => {
       return skipHTML(value, (text) =>
         text.split(target).join(`<mark style="background-color: ${highlighter.color};">${target}</mark>`)
       );
+    } else if (highlighter.type === 'transform') {
+      return skipHTML(value, (text) => {
+        return text.replace(highlighter.value, highlighter.replace || '');
+      });
     }
     return value;
   };

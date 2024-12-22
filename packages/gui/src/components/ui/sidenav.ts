@@ -123,7 +123,7 @@ export const handleSelection = async (
             if (Array.isArray(data)) {
               await actions.saveAnnotations(data);
               routingSvc.switchTo(Pages.HOME);
-              M.toast({ html: 'Finished importing annotations successfully' });
+              M.toast({ html: `Finished importing ${data.length} annotations successfully` });
               m.redraw();
             } else {
               const error = 'Invalid file format';

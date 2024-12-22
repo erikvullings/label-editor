@@ -16,12 +16,9 @@ export const HomePage: MeiosisComponent = () => {
     },
     view: ({ attrs }) => {
       const {
-        state: { article: data, dataCount, currentRowId, annotationId },
+        state: { dataCount, currentRowId, annotationId, annotationCount },
         actions: { refreshData, findAnnotation },
       } = attrs;
-      if (!data) {
-        refreshData(1);
-      }
 
       return m('#home-page.row.home.page.center-align', [
         m(LabelEditor, attrs),
@@ -30,6 +27,7 @@ export const HomePage: MeiosisComponent = () => {
           m(Pagination, {
             currentPage: currentRowId,
             totalPages: dataCount || 0,
+            totalAnnotations: annotationCount || 0,
             onPageChange: async (newPage) => {
               await refreshData(newPage);
             },

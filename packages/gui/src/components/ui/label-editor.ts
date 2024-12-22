@@ -3,8 +3,6 @@ import { MeiosisComponent, routingSvc, t } from '../../services';
 import { LayoutForm, SlimdownView, UIForm, resolvePlaceholders } from 'mithril-ui-form';
 import { Annotation, Pages, Settings } from '../../models';
 import { createHighlighter } from '../../utils';
-import { FlatButton } from 'mithril-materialized';
-import { handleSelection } from './sidenav';
 
 export const LabelEditor: MeiosisComponent = () => {
   let markdownTemplate: undefined | string;

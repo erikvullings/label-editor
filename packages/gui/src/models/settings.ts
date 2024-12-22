@@ -12,7 +12,7 @@ export const setLanguage = async (locale = i18n.currentLocale) => {
 };
 
 export type Highlighter = {
-  type: 'regex' | 'string'; // | 'stem';
+  type: 'regex' | 'string' | 'transform'; // | 'stem';
   /** Regex or string value to match */
   value: string | RegExp;
   /** Replacement string */
@@ -97,7 +97,7 @@ export const SettingsForm = (annotators: Annotator[] = [], allPropertyKeys: Opti
           description: 'Apply highlighter to selected object properties that are used in your template',
           options: allPropertyKeys,
         },
-        { id: 'color', label: 'Color', className: 'col s3 m2', type: 'color' },
+        { id: 'color', label: 'Color', className: 'col s3 m2', type: 'color', show: ['type!=transform'] },
       ],
     },
   ] as UIForm<Settings>;

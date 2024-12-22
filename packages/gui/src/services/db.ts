@@ -182,12 +182,14 @@ export const saveAnnotations = async (annotations: Annotation[]) => {
 };
 
 // Save annotation to IndexedDB
-export const saveAnnotation = async (articleId: ID, annotation: Annotation) => {
+export const saveAnnotation = async (articleId: ID, annotation: Annotation): Promise<number> => {
   const db = await initDB();
   const tx = db.transaction(ANNOTATION_STORE, 'readwrite');
   const store = tx.objectStore(ANNOTATION_STORE);
   await store.put(annotation as StoredAnnotation, articleId);
+  const count = await store.count();
   await tx.done;
+  return count;
 };
 
 // Fetch annotations

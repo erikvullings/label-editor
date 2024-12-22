@@ -20,7 +20,6 @@ import {
 } from './db';
 
 // const settingsSvc = restServiceFactory<Settings>('settings');
-const USER_ROLE = 'USER_ROLE';
 export const APP_TITLE = 'Label Editor';
 export const APP_TITLE_SHORT = 'Labeler';
 

@@ -1,5 +1,5 @@
 import m from 'mithril';
-import { MeiosisComponent, routingSvc, t } from '../../services';
+import { MeiosisComponent, routingSvc } from '../../services';
 import { LayoutForm, SlimdownView, UIForm, resolvePlaceholders } from 'mithril-ui-form';
 import { Annotation, Pages, Settings } from '../../models';
 import { createHighlighter } from '../../utils';

@@ -1,5 +1,3 @@
-import { jsonp } from 'mithril';
-
 const aboutMd = `# About Label Editor
 
 A standalone in-browser alternative to applications as [LABEL-STUDIO](https://labelstud.io/). It allows you to upload data in your browser (using the browser's internal IndexDB database for storage), specify your own Markdown-based template to display the data (rendered using [slimdown-js](https://github.com/erikvullings/slimdown-js)), and create your own annotations format by using a JSON template based on [mithril-ui-form](https://github.com/erikvullings/mithril-ui-form).

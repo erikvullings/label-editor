@@ -33,11 +33,11 @@ export const LabelEditor: MeiosisComponent = () => {
         '#editor.row',
         { style: { textAlign: 'left', marginBottom: '60px' } },
         md
-          ? m(SlimdownView, { md })
+          ? m(SlimdownView, { md, externalLinks: true })
           : m(
-              'p.col.s12',
+              'p.col.s12.center-align',
               `No preview possible - ${
-                !data ? 'Please upload JSON data first' : 'Please specify template to render your data'
+                !data ? 'Please use the menu to upload data first' : 'Please specify template to render your data'
               }.`,
               data &&
                 typeof markdownTemplate === 'undefined' && [
@@ -49,15 +49,7 @@ export const LabelEditor: MeiosisComponent = () => {
                     },
                     'Open settings'
                   ),
-                ],
-              !data && [
-                m('br'),
-                m(FlatButton, {
-                  label: t('UPLOAD'),
-                  onclick: () => handleSelection('import', 'data', actions),
-                  iconName: 'upload',
-                }),
-              ]
+                ]
             ),
         labelForm
           ? m(LayoutForm<any>, {
@@ -70,7 +62,7 @@ export const LabelEditor: MeiosisComponent = () => {
                 }
               },
             })
-          : m('p.col.s12', 'No annotation labels provided')
+          : data && m('p.col.s12', 'No annotation labels provided')
       );
     },
   };

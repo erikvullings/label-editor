@@ -54,7 +54,7 @@ export interface Actions {
     query?: Record<string, string | number | undefined>
   ) => void;
   saveSettings: (settings: Settings) => Promise<void>;
-  saveData: (articles: any[]) => Promise<void>;
+  saveData: (articles: any[], keypath?: string) => Promise<void>;
   saveAnnotations: (annotations: Annotation[]) => Promise<void>;
   setRole: (role: UserRole) => void;
   setSearchFilter: (searchFilter?: string) => Promise<void>;
@@ -98,8 +98,8 @@ export const appActions: (cell: MeiosisCell<State>) => Actions = ({ update /* st
       settings: () => settings,
     });
   },
-  saveData: async (articles: any[], dataId: string = '_id') => {
-    await saveData(articles, dataId);
+  saveData: async (articles: any[], keypath?: string) => {
+    await saveData(articles, keypath);
     const dataCount = await getDataCount();
     const data = await fetchData(1, 1);
     console.log(`Fetching data: ${data}`);

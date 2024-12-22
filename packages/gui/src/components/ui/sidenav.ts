@@ -1,17 +1,27 @@
 import m from 'mithril';
 import { Actions, MeiosisComponent, routingSvc, t } from '../../services';
-import { FlatButton, ModalPanel } from 'mithril-materialized';
-import { Page, Pages, Settings } from '../../models';
-import { formatDate, isActivePage } from '../../utils';
+import { FlatButton, IInputOption, ModalPanel, Select } from 'mithril-materialized';
+import { Data, Page, Pages, Settings } from '../../models';
+import { extractPropertyKeys, formatDate, isActivePage } from '../../utils';
 import { fetchAnnotations, fetchData, fetchSettings, getAnnotationCount, getDataCount } from '../../services/db';
 
 const handleFileUpload =
-  <T>(done: (error: string | null, data: T | null) => Promise<void>) =>
+  <T>(dialog: M.Modal | undefined, done: (error: string | null, data: T | null) => Promise<void>) =>
   (e: Event) => {
     const fileInput = e.target as HTMLInputElement;
     if (!fileInput.files || fileInput.files.length <= 0) return;
 
     const reader = new FileReader();
+    dialog?.open();
+
+    reader.onprogress = (e: ProgressEvent<FileReader>) => {
+      if (e.lengthComputable && dialog?.isOpen) {
+        const percentLoaded = Math.round((e.loaded / e.total) * 100);
+        const progressBar = document.body.querySelector('.determinate') as HTMLDivElement;
+        if (progressBar) progressBar.style.width = `${percentLoaded}%`;
+      }
+    };
+
     reader.onload = (e: ProgressEvent<FileReader>) => {
       if (e.target && e.target.result) {
         try {
@@ -22,6 +32,12 @@ const handleFileUpload =
       } else {
         done('Error: Data not imported', null);
       }
+      dialog?.close();
+    };
+
+    reader.onerror = () => {
+      done('Error: Failed to read file', null);
+      dialog?.close();
     };
 
     reader.readAsText(fileInput.files[0]);
@@ -30,7 +46,9 @@ const handleFileUpload =
 export const handleSelection = async (
   option: 'clear' | 'import' | 'export',
   dataType: 'data' | 'annotations' | 'settings',
-  actions: Actions
+  actions: Actions,
+  dialog: M.Modal | undefined,
+  onLoaded?: (data: Data[]) => Promise<void>
 ) => {
   switch (option) {
     case 'clear':
@@ -69,17 +87,24 @@ export const handleSelection = async (
       fileInput.accept = '.json';
       switch (dataType) {
         case 'data': {
-          fileInput.onchange = handleFileUpload<any[]>(async (error, data) => {
+          fileInput.onchange = handleFileUpload<any[]>(dialog, async (error, data) => {
             if (error) {
               M.toast({ html: error, classes: 'red' });
               console.error(error);
               return;
             }
             if (Array.isArray(data)) {
-              await actions.saveData(data);
-              routingSvc.switchTo(Pages.HOME);
-              M.toast({ html: 'Finished importing data successfully' });
-              m.redraw();
+              if (onLoaded) {
+                onLoaded(data);
+              }
+              // // const first = data.length > 0 ? data[0] : undefined;
+              // // if (dialog && first) {
+              // //   propertyKeys = extractPropertyKeys
+              // //   dialog.open();
+              // await actions.saveData(data);
+              // routingSvc.switchTo(Pages.HOME);
+              // M.toast({ html: 'Finished importing data successfully' });
+              // m.redraw();
             } else {
               const error = 'Invalid file format';
               M.toast({ html: error, classes: 'red' });
@@ -89,7 +114,7 @@ export const handleSelection = async (
           break;
         }
         case 'annotations': {
-          fileInput.onchange = handleFileUpload<any[]>(async (error, data) => {
+          fileInput.onchange = handleFileUpload<any[]>(dialog, async (error, data) => {
             if (error) {
               M.toast({ html: error, classes: 'red' });
               console.error(error);
@@ -109,7 +134,7 @@ export const handleSelection = async (
           break;
         }
         case 'settings': {
-          fileInput.onchange = handleFileUpload<Settings>(async (error, data) => {
+          fileInput.onchange = handleFileUpload<Settings>(dialog, async (error, data) => {
             if (error) {
               M.toast({ html: error, classes: 'red' });
               console.error(error);
@@ -136,9 +161,19 @@ export const handleSelection = async (
 };
 
 export const SideNav: MeiosisComponent = () => {
+  let progressDialog: M.Modal | undefined = undefined;
+  let setupDialog: M.Modal | undefined = undefined;
+
+  let dataId: string | undefined = undefined;
+  let titleId: string | undefined = undefined;
+  let textId: string | undefined = undefined;
+  let urlId: string | undefined = undefined;
+  let propertyKeys: IInputOption<string>[] = [];
+  let data: Data[] | undefined = undefined;
+
   return {
     view: ({ attrs: { state, actions } }) => {
-      const { page } = state;
+      const { page, settings = {} as Settings } = state;
       const { changePage } = actions;
       // const roleIcon = role === 'user' ? 'person' : role === 'editor' ? 'edit' : 'manage_accounts';
 
@@ -236,6 +271,69 @@ export const SideNav: MeiosisComponent = () => {
           )
         ),
         m(ModalPanel, {
+          id: 'progress',
+          title: 'Loading data...',
+          description: m('.progress', m('.determinate', { style: { width: 0 } })),
+          onCreate: (modal) => (progressDialog = modal),
+        }),
+        m(ModalPanel, {
+          id: 'dialog',
+          title: 'Setup',
+          description: m(
+            '.row',
+            m(
+              '.setup',
+              m(Select<string>, {
+                label: 'Select unique key in data',
+                checkedId: dataId,
+                options: propertyKeys,
+                onchange: (id) => (dataId = id[0]),
+              }),
+              m(Select<string>, {
+                label: 'Select key for title',
+                checkedId: titleId,
+                options: propertyKeys,
+                onchange: (id) => (titleId = id[0]),
+              }),
+              m(Select<string>, {
+                label: 'Select key for text',
+                checkedId: textId,
+                options: propertyKeys,
+                onchange: (id) => (textId = id[0]),
+              }),
+              m(Select<string>, {
+                label: 'Select key for URL',
+                checkedId: urlId,
+                options: propertyKeys,
+                onchange: (id) => (urlId = id[0]),
+              })
+            )
+          ),
+          buttons: [
+            {
+              label: t('IMPORT'),
+              onclick: async () => {
+                console.log(data);
+                if (data) {
+                  if (!settings.template) {
+                    settings.template = `# {{${titleId}}}
+                    
+{{${textId}}}
+
+[Open article]({{${urlId}}})`;
+                    await actions.saveSettings(settings);
+                  }
+                  await actions.saveData(data, dataId);
+                  routingSvc.switchTo(Pages.HOME);
+                  M.toast({ html: 'Finished importing data successfully' });
+                  m.redraw();
+                }
+              },
+            },
+          ],
+          onCreate: (modal) => (setupDialog = modal),
+        }),
+        m(ModalPanel, {
           id: 'import',
           title: t('IMPORT'),
           description: m('.row', m('.col.s12', m('p', 'Select the data you wish to import'))),
@@ -243,17 +341,33 @@ export const SideNav: MeiosisComponent = () => {
             {
               label: t('DATA'),
               iconName: 'data_array',
-              onclick: () => handleSelection('import', 'data', actions),
+              onclick: () =>
+                handleSelection('import', 'data', actions, progressDialog, async (loadedData) => {
+                  const first = loadedData.length > 0 ? loadedData[0] : undefined;
+                  if (setupDialog && first) {
+                    data = loadedData;
+                    const keys = extractPropertyKeys(first);
+                    propertyKeys = keys.map((key) => ({ id: key, label: key }));
+                    dataId = keys.filter((key) => /id/i.test(key)).shift();
+                    titleId = keys.filter((key) => /tit/i.test(key)).shift();
+                    textId = keys.filter((key) => /text|tek|body/i.test(key)).shift();
+                    urlId = keys.filter((key) => /url/i.test(key)).shift();
+                    console.table(keys);
+                    console.table({ dataId, titleId, textId, urlId });
+                    m.redraw();
+                    setTimeout(() => setupDialog!.open());
+                  }
+                }),
             },
             {
               label: t('ANNOTATION', 2),
               iconName: 'dataset',
-              onclick: () => handleSelection('import', 'annotations', actions),
+              onclick: () => handleSelection('import', 'annotations', actions, progressDialog),
             },
             {
               label: t('SETTINGS', 'TITLE'),
               iconName: 'data_object',
-              onclick: () => handleSelection('import', 'settings', actions),
+              onclick: () => handleSelection('import', 'settings', actions, progressDialog),
             },
           ],
         }),
@@ -265,17 +379,17 @@ export const SideNav: MeiosisComponent = () => {
             {
               label: t('DATA'),
               iconName: 'data_array',
-              onclick: () => handleSelection('export', 'data', actions),
+              onclick: () => handleSelection('export', 'data', actions, progressDialog),
             },
             {
               label: t('ANNOTATION', 2),
               iconName: 'dataset',
-              onclick: () => handleSelection('export', 'annotations', actions),
+              onclick: () => handleSelection('export', 'annotations', actions, progressDialog),
             },
             {
               label: t('SETTINGS', 'TITLE'),
               iconName: 'data_object',
-              onclick: () => handleSelection('export', 'settings', actions),
+              onclick: () => handleSelection('export', 'settings', actions, progressDialog),
             },
           ],
         }),

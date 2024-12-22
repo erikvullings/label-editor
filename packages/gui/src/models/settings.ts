@@ -15,6 +15,8 @@ export type Highlighter = {
   type: 'regex' | 'string'; // | 'stem';
   /** Regex or string value to match */
   value: string | RegExp;
+  /** Replacement string */
+  replace?: string;
   /** Color to use for the label */
   color: string;
   /** Applies to properties */
@@ -80,19 +82,22 @@ export const SettingsForm = (annotators: Annotator[] = [], allPropertyKeys: Opti
           options: [
             { id: 'regex', label: 'Regex' },
             { id: 'string', label: 'String' },
-            // { id: 'stem', label: 'Stem' },
+            { id: 'transform', label: 'Transform' },
           ],
         },
-        { id: 'value', label: 'Value', className: 'col s4 m6', type: 'text' },
-        { id: 'color', label: 'Color', className: 'col s4 m3', type: 'color' },
+        { id: 'value', show: ['type!=transform'], label: 'Value', className: 'col s8 m9', type: 'text' },
+        { id: 'value', show: ['type=transform'], label: 'Match', className: 'col s4 m5', type: 'text' },
+        { id: 'replace', show: ['type=transform'], label: 'Replace', className: 'col s4 m4', type: 'text' },
         {
           id: 'properties',
           label: 'Select properties',
           type: 'select',
+          className: 'col s9 m10',
           multiple: true,
           description: 'Apply highlighter to selected object properties that are used in your template',
           options: allPropertyKeys,
         },
+        { id: 'color', label: 'Color', className: 'col s3 m2', type: 'color' },
       ],
     },
   ] as UIForm<Settings>;

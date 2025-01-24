@@ -39,7 +39,7 @@ export const Layout: MeiosisComponent = () => {
                   'a.brand-logo',
                   {
                     title: APP_TITLE,
-                    style: { color: 'black' },
+                    style: { color: 'black', position: 'relative' },
                     href: routingSvc.href(Pages.LANDING),
                   },
                   [

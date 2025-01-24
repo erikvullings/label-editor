@@ -232,8 +232,8 @@ export const createHighlighter = (highlighters: Highlighter[]) => {
     .filter(validateHighlighter)
     .map((h) => {
       if (h.type !== 'string') {
-        console.table(h);
-        console.log(new RegExp(h.value, 'gi'));
+        // console.table(h);
+        // console.log(new RegExp(h.value, 'gi'));
         return { ...h, value: new RegExp(h.value, 'gi') };
       }
       return h;
@@ -300,4 +300,16 @@ export const createHighlighter = (highlighters: Highlighter[]) => {
   };
 
   return highlightData;
+};
+
+export const filterUniqueItems = <T>(items: T[], dataId: keyof T): T[] => {
+  const seenIds = new Set<unknown>(); // To track unique IDs
+  return items.filter((item) => {
+    const id = item[dataId]; // Access ID using dataId
+    if (seenIds.has(id)) {
+      return false; // Skip duplicates
+    }
+    seenIds.add(id); // Mark ID as seen
+    return true; // Keep unique items
+  });
 };

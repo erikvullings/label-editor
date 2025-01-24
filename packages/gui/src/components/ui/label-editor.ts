@@ -9,16 +9,19 @@ export const LabelEditor: MeiosisComponent = () => {
   let labelForm: undefined | UIForm<any>;
   let highlighter: undefined | ((data: Record<string, any>) => Record<string, any>);
 
+  let dummy: Record<string, any> = {};
+
   return {
     view: ({ attrs: { state, actions } }) => {
-      const { settings = {} as Settings } = state;
+      const { settings = {} as Settings, annotator, page } = state;
+      // console.log(settings);
       const { setAnnotation } = actions;
       if (!markdownTemplate || markdownTemplate !== settings.template) {
-        const { highlighters, template, labels } = settings;
+        const { highlighters, template, labelsStr, labels } = settings;
         markdownTemplate = template;
         highlighter = highlighters && highlighters.length > 0 ? createHighlighter(highlighters) : undefined;
         try {
-          labelForm = settings.labels ? JSON.parse(labels) : undefined;
+          labelForm = labels ? labels : labelsStr ? JSON.parse(labelsStr) : undefined;
         } catch {
           labelForm = undefined;
         }
@@ -27,6 +30,7 @@ export const LabelEditor: MeiosisComponent = () => {
       const highlighted = data && highlighter ? highlighter(data) : data;
       const md = markdownTemplate && resolvePlaceholders(markdownTemplate, highlighted);
 
+      const context = [data, { annotator }];
       return m(
         '#editor.row',
         { style: { textAlign: 'left', marginBottom: '60px' } },
@@ -52,8 +56,8 @@ export const LabelEditor: MeiosisComponent = () => {
         labelForm
           ? m(LayoutForm<any>, {
               form: labelForm,
-              obj: annotation,
-              context: [data, settings],
+              obj: page === Pages.SETTINGS ? dummy : annotation,
+              context,
               onchange: async () => {
                 if (data && data.leRowId) {
                   await setAnnotation(data.leRowId, annotation);

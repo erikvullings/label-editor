@@ -17,6 +17,7 @@ import {
   saveAnnotations,
   saveData,
   saveSettings,
+  UNIQUE_ARTICLE_ID,
 } from './db';
 
 // const settingsSvc = restServiceFactory<Settings>('settings');
@@ -56,7 +57,7 @@ export interface Actions {
     query?: Record<string, string | number | undefined>
   ) => void;
   saveSettings: (settings: Settings) => Promise<void>;
-  saveData: (articles: any[], keypath?: string) => Promise<void>;
+  saveData: (dataId: string, articles: any[]) => Promise<void>;
   saveAnnotations: (annotations: Annotation[]) => Promise<void>;
   setSearchFilter: (searchFilter?: string) => Promise<void>;
   setAnnotator: (annotator: string) => void;
@@ -72,7 +73,7 @@ export type MeiosisComponent<T extends { [key: string]: any } = {}> = FactoryCom
   options?: T;
 }>;
 
-export const appActions: (cell: MeiosisCell<State>) => Actions = ({ update /* states */ }) => ({
+export const appActions: (cell: MeiosisCell<State>) => Actions = ({ update, states }) => ({
   // addDucks: (cell, amount) => {
   //   cell.update({ ducks: (value) => value + amount });
   // },
@@ -94,22 +95,29 @@ export const appActions: (cell: MeiosisCell<State>) => Actions = ({ update /* st
   },
   saveSettings: async (settings: Settings) => {
     await saveSettings(settings);
+    console.log(`Data ID: ${settings.dataId}`);
+
     update({
       settings: () => settings,
     });
   },
-  saveData: async (articles: any[], keypath?: string) => {
-    await saveData(articles, keypath);
+  saveData: async (dataId, articles: any[]) => {
+    await saveData(dataId, articles);
     const dataCount = await getDataCount();
-    const data = await fetchData(1, 1);
-    console.log(`Fetching data: ${data}`);
+    const article = articles?.length > 0 ? articles[0] : undefined;
+    // console.log(`Fetching data: ${data}`);
+    console.log(`Data ID: ${dataId}`);
     update({
-      article: () => (data && data.length > 0 ? data[0] : undefined),
+      settings: (settings) => ({ ...settings, dataId }),
+      article: () => article,
       dataCount,
     });
   },
   saveAnnotations: async (annotations: Annotation[]) => {
-    await saveAnnotations(annotations);
+    const { settings = {} as Settings } = states();
+    const { dataId = UNIQUE_ARTICLE_ID } = settings;
+    console.log(`Data ID: ${settings.dataId}`);
+    await saveAnnotations(dataId, annotations);
     update({ annotationCount: annotations.length });
   },
   setSearchFilter: async (searchFilter?: string) => {
@@ -122,12 +130,16 @@ export const appActions: (cell: MeiosisCell<State>) => Actions = ({ update /* st
   },
   setAnnotator: (annotator: string) => update({ annotator }),
   setAnnotation: async (fromId: number, annotation: Annotation) => {
-    console.log(annotation);
-    const annotationCount = await saveAnnotation(fromId, annotation);
+    // console.log(annotation);
+    const { settings = {} as Settings } = states();
+    const { dataId = UNIQUE_ARTICLE_ID } = settings;
+    const annotationCount = await saveAnnotation(dataId, fromId, annotation);
     update({ annotation: () => annotation, annotationCount });
   },
   findAnnotation: async (id?: ID, next = true) => {
-    const { index, article, annotation, annotationId } = await findAnnotatedArticle(id, next);
+    const { settings = {} as Settings } = states();
+    const { dataId = UNIQUE_ARTICLE_ID } = settings;
+    const { index, article, annotation, annotationId } = await findAnnotatedArticle(dataId, id, next);
     if (index >= 0) {
       update({
         currentRowId: index,
@@ -138,8 +150,10 @@ export const appActions: (cell: MeiosisCell<State>) => Actions = ({ update /* st
     }
   },
   refreshData: async (currentRowId: number) => {
-    console.log(`Current row id: ${currentRowId}`);
-    const { article, articleId, annotations } = await getArticleWithAnnotations(currentRowId);
+    // console.log(`Current row id: ${currentRowId}`);
+    const { settings = {} as Settings } = states();
+    const { dataId = UNIQUE_ARTICLE_ID } = settings;
+    const { article, articleId, annotations } = await getArticleWithAnnotations(dataId, currentRowId);
 
     // const data = await fetchData(currentRowId, 1);
     // const annotations = await fetchAnnotations(currentRowId, 1);
@@ -155,9 +169,9 @@ export const appActions: (cell: MeiosisCell<State>) => Actions = ({ update /* st
 export const setSearchResults: Service<State> = {
   onchange: (state) => state.searchFilter,
   run: (cell) => {
-    const state = cell.getState();
-    const { searchFilter } = state;
-    console.log(`Searching ${searchFilter}`);
+    // const state = cell.getState();
+    // const { searchFilter } = state;
+    // console.log(`Searching ${searchFilter}`);
     cell.update({ searchResults: () => [] });
   },
 };
@@ -184,7 +198,9 @@ cells.map(() => {
 const loadData = () => {
   // const role = (localStorage.getItem(USER_ROLE) || 'user') as UserRole;
   fetchSettings().then(async (settings) => {
-    const { article, articleId, annotations } = await getArticleWithAnnotations(0);
+    const { dataId = UNIQUE_ARTICLE_ID } = settings;
+    console.log(`Data ID: ${dataId}`);
+    const { article, articleId, annotations } = await getArticleWithAnnotations(dataId, 0);
     const dataCount = await getDataCount();
     const annotationCount = await getAnnotationCount();
     // console.log(data);  64. 900
@@ -193,7 +209,8 @@ const loadData = () => {
       dataCount,
       annotationCount,
       articleId,
-      settings: () => settings,
+      annotator: settings.annotator,
+      settings: () => ({ loaded: true, ...settings }),
       article: () => article,
       annotation: () => (annotations && annotations.length > 0 ? annotations[0] : undefined),
     });

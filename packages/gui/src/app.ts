@@ -5,6 +5,10 @@ import 'materialize-css/dist/js/materialize.min.js';
 import './css/style.css';
 import { routingSvc } from './services/routing-service';
 import { i18n } from './services';
+import { ratingPlugin } from 'mithril-ui-form-rating-plugin';
+import { registerPlugin } from 'mithril-ui-form';
+
+registerPlugin('rating', ratingPlugin);
 
 document.documentElement.setAttribute('lang', 'en');
 

@@ -1,5 +1,6 @@
 import { deleteDB, openDB } from 'idb';
 import { Annotation, Data, Settings } from '../models';
+import { filterUniqueItems } from '../utils';
 
 export type ID = string | number;
 
@@ -7,14 +8,14 @@ const DB_NAME = 'LabelEditorDB';
 const DATA_STORE = 'dataStore';
 const ANNOTATION_STORE = 'annotationStore';
 const SETTINGS_STORE = 'settingsStore';
-const UNIQUE_ARTICLE_ID = '$articleId';
+export const UNIQUE_ARTICLE_ID = '$articleId';
 
 // let ARTICLE_ID = UNIQUE_ARTICLE_ID;
 export type StoredAnnotation = Annotation & {
   [key: string]: ID;
 };
 
-const initDB = async (keyPath = UNIQUE_ARTICLE_ID) => {
+const initDB = async (keyPath: string) => {
   // ARTICLE_ID = dataId ? dataId : UNIQUE_ARTICLE_ID;
   return await openDB(DB_NAME, 1, {
     upgrade(db) {
@@ -41,7 +42,7 @@ const resetDB = async () => {
 };
 
 /** Save data to IndexedDB */
-export const saveData = async (articles: any[], dataId?: string) => {
+export const saveData = async (dataId: string, articles: any[]) => {
   const settings = await fetchSettings();
   await resetDB();
   const db = await initDB(dataId);
@@ -53,27 +54,33 @@ export const saveData = async (articles: any[], dataId?: string) => {
 };
 
 // Fetch data from IndexedDB
-export const fetchData = async (fromKey = 1, count = 100): Promise<Data[]> => {
-  const db = await initDB();
+export const fetchData = async (dataId: string, fromKey = 1, count = 100): Promise<Data[]> => {
+  const db = await initDB(dataId);
   const store = db.transaction(DATA_STORE).objectStore(DATA_STORE);
   return (await store.getAll(IDBKeyRange.bound(fromKey, fromKey + count - 1))) || [];
 };
 
-const getAnnotationsForArticle = async (articleId?: ID): Promise<StoredAnnotation[]> => {
+export const fetchAllData = async (dataId: string): Promise<Data[]> => {
+  const db = await initDB(dataId);
+  return (await db.getAll(DATA_STORE)) as Data[];
+};
+
+const getAnnotationsForArticle = async (dataId: string, articleId?: ID): Promise<StoredAnnotation[]> => {
   if (typeof articleId === 'undefined') return [];
-  console.log(`Getting annotations for ${articleId}`);
-  const db = await initDB();
+  // console.log(`Getting annotations for ${articleId}`);
+  const db = await initDB(dataId);
   const tx = db.transaction(ANNOTATION_STORE, 'readonly');
   const store = tx.store;
   const found = await store.getAll(articleId);
-  console.log(found);
+  // console.log(found);
   return found;
 };
 
 export const getArticleWithAnnotations = async (
+  dataId: string,
   articleIdx: number
 ): Promise<{ article?: Data; articleId?: ID; annotations?: StoredAnnotation[] }> => {
-  const db = await initDB();
+  const db = await initDB(dataId);
   const tx = db.transaction([DATA_STORE, ANNOTATION_STORE], 'readonly');
   const dataStore = tx.objectStore(DATA_STORE);
 
@@ -90,17 +97,18 @@ export const getArticleWithAnnotations = async (
     cursor = await cursor.continue();
   }
   if (articleId) {
-    annotations = await getAnnotationsForArticle(articleId);
+    annotations = await getAnnotationsForArticle(dataId, articleId);
   }
   return { article, articleId, annotations };
 };
 
 const findIndexAndValue = async <T extends Data | StoredAnnotation>(
+  dataId: string,
   storeName: string,
   targetId?: ID
 ): Promise<{ index: number; value?: T }> => {
   let index = 0;
-  const db = await initDB();
+  const db = await initDB(dataId);
   let cursor = await db.transaction(storeName).store.openCursor();
 
   while (cursor) {
@@ -118,6 +126,7 @@ const findIndexAndValue = async <T extends Data | StoredAnnotation>(
 };
 
 export const findAnnotatedArticle = async (
+  dataId: string,
   annotationId?: ID,
   next = true
 ): Promise<{
@@ -126,8 +135,8 @@ export const findAnnotatedArticle = async (
   annotationId?: ID;
   annotation?: StoredAnnotation;
 }> => {
-  console.log('findAnnotatedArticle');
-  const db = await initDB();
+  // console.log('findAnnotatedArticle');
+  const db = await initDB(dataId);
   const tx = db.transaction(ANNOTATION_STORE, 'readonly');
   const annotationStore = tx.objectStore(ANNOTATION_STORE);
 
@@ -164,26 +173,33 @@ export const findAnnotatedArticle = async (
       cursor = await cursor.continue();
     }
   }
-  const { index, value: article } = await findIndexAndValue<Data>(DATA_STORE, id);
+  const { index, value: article } = await findIndexAndValue<Data>(dataId, DATA_STORE, id);
   return { index, article, annotation, annotationId: id };
 };
 
 export const getDataCount = async () => {
-  const db = await initDB();
+  const db = await initDB('');
   const store = db.transaction(DATA_STORE).objectStore(DATA_STORE);
   return await store.count();
 };
 
 /** Save annotations to IndexedDB */
-export const saveAnnotations = async (annotations: Annotation[]) => {
-  const db = await initDB();
+export const saveAnnotations = async (dataId: string, annotations: Annotation[]) => {
+  const db = await initDB(dataId);
   const tx = db.transaction(ANNOTATION_STORE, 'readwrite');
-  await Promise.all([...annotations.map((d) => tx.store.add(d)), tx.done]);
+  const store = tx.objectStore(ANNOTATION_STORE);
+  store.clear();
+  await Promise.all([
+    ...filterUniqueItems(annotations, dataId).map((d) => {
+      return tx.store.add(d);
+    }),
+    tx.done,
+  ]);
 };
 
 // Save annotation to IndexedDB
-export const saveAnnotation = async (articleId: ID, annotation: Annotation): Promise<number> => {
-  const db = await initDB();
+export const saveAnnotation = async (dataId: string, articleId: ID, annotation: Annotation): Promise<number> => {
+  const db = await initDB(dataId);
   const tx = db.transaction(ANNOTATION_STORE, 'readwrite');
   const store = tx.objectStore(ANNOTATION_STORE);
   await store.put(annotation as StoredAnnotation, articleId);
@@ -193,21 +209,19 @@ export const saveAnnotation = async (articleId: ID, annotation: Annotation): Pro
 };
 
 // Fetch annotations
-export const fetchAnnotations = async (fromKey = 1, count = 100): Promise<StoredAnnotation[]> => {
-  const db = await initDB();
-  const tx = db.transaction(ANNOTATION_STORE, 'readonly');
-  const store = tx.objectStore(ANNOTATION_STORE);
-  return (await store.getAll(IDBKeyRange.bound(fromKey, fromKey + count - 1))) as StoredAnnotation[];
+export const fetchAnnotations = async (dataId: string): Promise<StoredAnnotation[]> => {
+  const db = await initDB(dataId);
+  return (await db.getAll(ANNOTATION_STORE)) as StoredAnnotation[];
 };
 
 export const getAnnotationCount = async () => {
-  const db = await initDB();
+  const db = await initDB('');
   const store = db.transaction(ANNOTATION_STORE).objectStore(ANNOTATION_STORE);
   return await store.count();
 };
 
 export const saveSettings = async (settings: Settings) => {
-  const db = await initDB();
+  const db = await initDB('');
   const tx = db.transaction(SETTINGS_STORE, 'readwrite');
   const store = tx.objectStore(SETTINGS_STORE);
   await store.put({ id: 1, settings });
@@ -215,7 +229,7 @@ export const saveSettings = async (settings: Settings) => {
 };
 
 export const fetchSettings = async (): Promise<Settings> => {
-  const db = await initDB();
+  const db = await initDB('');
   const tx = db.transaction(SETTINGS_STORE, 'readonly');
   const store = tx.objectStore(SETTINGS_STORE);
   return ((await store.get(1))?.settings || {}) as Settings;

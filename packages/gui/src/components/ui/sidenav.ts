@@ -3,7 +3,13 @@ import { Actions, MeiosisComponent, routingSvc, t } from '../../services';
 import { FlatButton, IInputOption, ModalPanel, Select } from 'mithril-materialized';
 import { Data, Page, Pages, Settings } from '../../models';
 import { extractPropertyKeys, formatDate, isActivePage } from '../../utils';
-import { fetchAnnotations, fetchData, fetchSettings, getAnnotationCount, getDataCount } from '../../services/db';
+import {
+  fetchAllData,
+  fetchAnnotations,
+  fetchSettings,
+  getAnnotationCount,
+  UNIQUE_ARTICLE_ID,
+} from '../../services/db';
 
 const handleFileUpload =
   <T>(dialog: M.Modal | undefined, done: (error: string | null, data: T | null) => Promise<void>) =>
@@ -44,12 +50,15 @@ const handleFileUpload =
   };
 
 export const handleSelection = async (
+  dataId: string,
   option: 'clear' | 'import' | 'export',
   dataType: 'data' | 'annotations' | 'settings',
   actions: Actions,
   dialog: M.Modal | undefined,
   onLoaded?: (data: Data[]) => Promise<void>
 ) => {
+  console.log(`Data ID: ${dataId}`);
+
   switch (option) {
     case 'clear':
       console.log('CLEARING DATA NOT IMPLEMENTED');
@@ -58,15 +67,16 @@ export const handleSelection = async (
       let dataStr: string;
       switch (dataType) {
         case 'data': {
-          const count = await getDataCount();
-          const data = await fetchData(1, count);
+          const data = await fetchAllData(dataId);
           dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data));
           break;
         }
         case 'annotations': {
-          const count = await getAnnotationCount();
-          const data = await fetchAnnotations(1, count);
-          dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data.map((d) => d.annotation)));
+          // const count = await getAnnotationCount();
+          // console.log(count);
+          const data = await fetchAnnotations(dataId);
+          // console.log(data);
+          dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data));
           break;
         }
         case 'settings': {
@@ -122,8 +132,13 @@ export const handleSelection = async (
             }
             if (Array.isArray(data)) {
               await actions.saveAnnotations(data);
+              const count = await getAnnotationCount();
               routingSvc.switchTo(Pages.HOME);
-              M.toast({ html: `Finished importing ${data.length} annotations successfully` });
+              M.toast({
+                html: `Finished importing ${count} annotations successfully${
+                  count !== data.length ? `, with ${data.length - count} duplicate(s)` : ''
+                }.`,
+              });
               m.redraw();
             } else {
               const error = 'Invalid file format';
@@ -164,7 +179,7 @@ export const SideNav: MeiosisComponent = () => {
   let progressDialog: M.Modal | undefined = undefined;
   let setupDialog: M.Modal | undefined = undefined;
 
-  let dataId: string | undefined = undefined;
+  let dataId: string = UNIQUE_ARTICLE_ID;
   let titleId: string | undefined = undefined;
   let textId: string | undefined = undefined;
   let urlId: string | undefined = undefined;
@@ -175,7 +190,6 @@ export const SideNav: MeiosisComponent = () => {
     view: ({ attrs: { state, actions } }) => {
       const { page, settings = {} as Settings } = state;
       const { changePage } = actions;
-      // const roleIcon = role === 'user' ? 'person' : role === 'editor' ? 'edit' : 'manage_accounts';
 
       const isActive = isActivePage(page);
 
@@ -209,19 +223,10 @@ export const SideNav: MeiosisComponent = () => {
                   // ),
                 ])
               ),
-            // m(
-            //   'li',
-            //   m(FlatButton, {
-            //     label: t('CLEAR'),
-            //     iconName: 'clear',
-            //     modalId: 'clear_model',
-            //   })
-            // ),
             m(
               'li',
               m(FlatButton, {
                 label: t('EXPORT'),
-                // onclick: () => handleSelection('export', 'data'),
                 iconName: 'download',
                 modalId: 'export',
               })
@@ -230,44 +235,10 @@ export const SideNav: MeiosisComponent = () => {
               'li',
               m(FlatButton, {
                 label: t('IMPORT'),
-                // onclick: () => handleSelection('import', 'data'),
                 iconName: 'upload',
                 modalId: 'import',
               })
             )
-            // m(
-            //   'li',
-            //   m(FlatButton, {
-            //     label: t('PERMALINK'),
-            //     onclick: () => handleSelection('link', model, saveModel),
-            //     iconName: 'link',
-            //   })
-            // ),
-            // m(
-            //   'li',
-            //   m(Select, {
-            //     checkedId: role,
-            //     label: t('ROLE'),
-            //     iconName: roleIcon,
-            //     options: [
-            //       { id: 'user', label: t('USER') },
-            //       { id: 'editor', label: t('EDITOR') },
-            //       { id: 'admin', label: t('ADMIN') },
-            //     ],
-            //     onchange: (role) => {
-            //       setRole(role[0]);
-            //     },
-            //   } as ISelectOptions<UserRole>)
-            // ),
-            // m(
-            //   'li',
-            //   m(LanguageSwitcher, {
-            //     onLanguageChange: async (language: Languages) => {
-            //       await i18n.loadAndSetLocale(language as Languages);
-            //     },
-            //     currentLanguage: i18n.currentLocale,
-            //   })
-            // )
           )
         ),
         m(ModalPanel, {
@@ -313,8 +284,9 @@ export const SideNav: MeiosisComponent = () => {
             {
               label: t('IMPORT'),
               onclick: async () => {
-                console.log(data);
+                // console.log(data);
                 if (data) {
+                  settings.dataId = dataId;
                   if (!settings.template) {
                     settings.template = `# {{${titleId}}}
                     
@@ -323,7 +295,7 @@ export const SideNav: MeiosisComponent = () => {
 [Open article]({{${urlId}}})`;
                     await actions.saveSettings(settings);
                   }
-                  await actions.saveData(data, dataId);
+                  await actions.saveData(settings.dataId, data);
                   routingSvc.switchTo(Pages.HOME);
                   M.toast({ html: 'Finished importing data successfully' });
                   m.redraw();
@@ -336,19 +308,22 @@ export const SideNav: MeiosisComponent = () => {
         m(ModalPanel, {
           id: 'import',
           title: t('IMPORT'),
-          description: m('.row', m('.col.s12', m('p', 'Select the data you wish to import'))),
+          description: m(
+            '.row',
+            m('.col.s12', m('p', 'Select the data you wish to import. This will replace the current data.'))
+          ),
           buttons: [
             {
               label: t('DATA'),
               iconName: 'data_array',
               onclick: () =>
-                handleSelection('import', 'data', actions, progressDialog, async (loadedData) => {
+                handleSelection(dataId, 'import', 'data', actions, progressDialog, async (loadedData) => {
                   const first = loadedData.length > 0 ? loadedData[0] : undefined;
                   if (setupDialog && first) {
                     data = loadedData;
                     const keys = extractPropertyKeys(first);
                     propertyKeys = keys.map((key) => ({ id: key, label: key }));
-                    dataId = keys.filter((key) => /id/i.test(key)).shift();
+                    dataId = keys.filter((key) => /id/i.test(key)).shift() || UNIQUE_ARTICLE_ID;
                     titleId = keys.filter((key) => /tit/i.test(key)).shift();
                     textId = keys.filter((key) => /text|tek|body/i.test(key)).shift();
                     urlId = keys.filter((key) => /url/i.test(key)).shift();
@@ -362,12 +337,12 @@ export const SideNav: MeiosisComponent = () => {
             {
               label: t('ANNOTATION', 2),
               iconName: 'dataset',
-              onclick: () => handleSelection('import', 'annotations', actions, progressDialog),
+              onclick: () => handleSelection(dataId, 'import', 'annotations', actions, progressDialog),
             },
             {
               label: t('SETTINGS', 'TITLE'),
               iconName: 'data_object',
-              onclick: () => handleSelection('import', 'settings', actions, progressDialog),
+              onclick: () => handleSelection(dataId, 'import', 'settings', actions, progressDialog),
             },
           ],
         }),
@@ -379,17 +354,17 @@ export const SideNav: MeiosisComponent = () => {
             {
               label: t('DATA'),
               iconName: 'data_array',
-              onclick: () => handleSelection('export', 'data', actions, progressDialog),
+              onclick: () => handleSelection(dataId, 'export', 'data', actions, progressDialog),
             },
             {
               label: t('ANNOTATION', 2),
               iconName: 'dataset',
-              onclick: () => handleSelection('export', 'annotations', actions, progressDialog),
+              onclick: () => handleSelection(dataId, 'export', 'annotations', actions, progressDialog),
             },
             {
               label: t('SETTINGS', 'TITLE'),
               iconName: 'data_object',
-              onclick: () => handleSelection('export', 'settings', actions, progressDialog),
+              onclick: () => handleSelection(dataId, 'export', 'settings', actions, progressDialog),
             },
           ],
         }),

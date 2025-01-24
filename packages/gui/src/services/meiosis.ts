@@ -61,7 +61,7 @@ export interface Actions {
   saveAnnotations: (annotations: Annotation[]) => Promise<void>;
   setSearchFilter: (searchFilter?: string) => Promise<void>;
   setAnnotator: (annotator: string) => void;
-  setAnnotation: (id: number, annotation: Annotation) => Promise<void>;
+  setAnnotation: (id: number | string, annotation: Annotation) => Promise<void>;
   findAnnotation: (id?: ID, next?: boolean) => Promise<void>;
   /** Update the current data item */
   refreshData: (id: number) => Promise<void>;
@@ -128,8 +128,8 @@ export const appActions: (cell: MeiosisCell<State>) => Actions = ({ update, stat
       update({ searchFilter: undefined });
     }
   },
-  setAnnotator: (annotator: string) => update({ annotator }),
-  setAnnotation: async (fromId: number, annotation: Annotation) => {
+  setAnnotator: (annotator) => update({ annotator }),
+  setAnnotation: async (fromId, annotation) => {
     // console.log(annotation);
     const { settings = {} as Settings } = states();
     const { dataId = UNIQUE_ARTICLE_ID } = settings;

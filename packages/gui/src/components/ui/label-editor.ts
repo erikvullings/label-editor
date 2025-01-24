@@ -34,6 +34,21 @@ export const LabelEditor: MeiosisComponent = () => {
       return m(
         '#editor.row',
         { style: { textAlign: 'left', marginBottom: '60px' } },
+        labelForm
+          ? m(LayoutForm<any>, {
+              form: labelForm,
+              obj: page === Pages.SETTINGS ? dummy : annotation,
+              context,
+              onchange:
+                page === Pages.SETTINGS
+                  ? undefined
+                  : async () => {
+                      if (data && data[settings.dataId]) {
+                        await setAnnotation(data[settings.dataId], annotation);
+                      }
+                    },
+            })
+          : data && m('p.col.s12', 'No annotation labels provided'),
         md
           ? m(SlimdownView, { md, externalLinks: true })
           : m(
@@ -52,19 +67,7 @@ export const LabelEditor: MeiosisComponent = () => {
                     'Open settings'
                   ),
                 ]
-            ),
-        labelForm
-          ? m(LayoutForm<any>, {
-              form: labelForm,
-              obj: page === Pages.SETTINGS ? dummy : annotation,
-              context,
-              onchange: async () => {
-                if (data && data.leRowId) {
-                  await setAnnotation(data.leRowId, annotation);
-                }
-              },
-            })
-          : data && m('p.col.s12', 'No annotation labels provided')
+            )
       );
     },
   };

@@ -95,7 +95,7 @@ export const appActions: (cell: MeiosisCell<State>) => Actions = ({ update, stat
   },
   saveSettings: async (settings: Settings) => {
     await saveSettings(settings);
-    console.log(`Data ID: ${settings.dataId}`);
+    // console.log(`Data ID: ${settings.dataId}`);
 
     update({
       settings: () => settings,
@@ -106,7 +106,7 @@ export const appActions: (cell: MeiosisCell<State>) => Actions = ({ update, stat
     const dataCount = await getDataCount();
     const article = articles?.length > 0 ? articles[0] : undefined;
     // console.log(`Fetching data: ${data}`);
-    console.log(`Data ID: ${dataId}`);
+    // console.log(`Data ID: ${dataId}`);
     update({
       settings: (settings) => ({ ...settings, dataId }),
       article: () => article,
@@ -116,7 +116,7 @@ export const appActions: (cell: MeiosisCell<State>) => Actions = ({ update, stat
   saveAnnotations: async (annotations: Annotation[]) => {
     const { settings = {} as Settings } = states();
     const { dataId = UNIQUE_ARTICLE_ID } = settings;
-    console.log(`Data ID: ${settings.dataId}`);
+    // console.log(`Data ID: ${settings.dataId}`);
     await saveAnnotations(dataId, annotations);
     update({ annotationCount: annotations.length });
   },
@@ -199,7 +199,7 @@ const loadData = () => {
   // const role = (localStorage.getItem(USER_ROLE) || 'user') as UserRole;
   fetchSettings().then(async (settings) => {
     const { dataId = UNIQUE_ARTICLE_ID } = settings;
-    console.log(`Data ID: ${dataId}`);
+    // console.log(`Data ID: ${dataId}`);
     const { article, articleId, annotations } = await getArticleWithAnnotations(dataId, 0);
     const dataCount = await getDataCount();
     const annotationCount = await getAnnotationCount();

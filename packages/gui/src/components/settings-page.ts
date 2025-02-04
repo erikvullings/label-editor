@@ -87,7 +87,7 @@ export const SettingsPage: MeiosisComponent = () => {
                           value: `Below, you can see the first article in your data, which may help you in creating the template. Available properties are:
 ${allPropertyKeys.map((p) => `- ${p.label}`).join('\n')}`,
                           transform: (dir, value: string) => {
-                            console.log(value);
+                            // console.log(value);
                             return dir === 'to' ? value.replace(/<\/?em>/g, '_') : value;
                           },
                         },
@@ -124,7 +124,7 @@ ${allPropertyKeys.map((p) => `- ${p.label}`).join('\n')}`,
                   ],
                   obj: settings,
                   onchange: async () => {
-                    console.log(JSON.stringify(settings.labels, null, 2));
+                    // console.log(JSON.stringify(settings.labels, null, 2));
                     await actions.saveSettings(settings);
                   },
                 } as FormAttributes<Settings>),

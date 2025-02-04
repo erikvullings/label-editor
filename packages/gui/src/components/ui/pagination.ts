@@ -14,7 +14,7 @@ export const Pagination: FactoryComponent<PaginationProps> = () => {
 
   return {
     view: ({ attrs: { currentPage, totalPages, totalAnnotations, onPageChange, onFindAnnotation } }) => {
-      console.log(`Current page: ${currentPage}`);
+      // console.log(`Current page: ${currentPage}`);
       const isFirstPage = currentPage === 0;
       const isLastPage = currentPage === totalPages - 1;
 

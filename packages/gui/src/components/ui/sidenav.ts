@@ -57,11 +57,11 @@ export const handleSelection = async (
   dialog: M.Modal | undefined,
   onLoaded?: (data: Data[]) => Promise<void>
 ) => {
-  console.log(`Data ID: ${dataId}`);
+  // console.log(`Data ID: ${dataId}`);
 
   switch (option) {
     case 'clear':
-      console.log('CLEARING DATA NOT IMPLEMENTED');
+      console.warn('CLEARING DATA NOT IMPLEMENTED');
       break;
     case 'export': {
       let dataStr: string;

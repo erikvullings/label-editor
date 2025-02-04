@@ -177,7 +177,7 @@ export const scrollToSection = (e: MouseEvent, id: string): void => {
   if (element) {
     element.scrollIntoView({ behavior: 'smooth' });
   } else {
-    console.log(`Element with id ${id} not found.`);
+    console.warn(`Element with id ${id} not found.`);
   }
 };
 

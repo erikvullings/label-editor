@@ -31,6 +31,7 @@ export const SettingsPage: MeiosisComponent = () => {
         await refreshData(1);
       }
       setPage(Pages.SETTINGS);
+      console.log(location.pathname);
     },
     view: ({ attrs }) => {
       const { state, actions } = attrs;

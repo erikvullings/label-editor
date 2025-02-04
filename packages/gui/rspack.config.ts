@@ -140,7 +140,7 @@ const configuration: Configuration = {
   },
   output: {
     filename: '[id].bundle.js',
-    publicPath: '/',
+    // publicPath: '/',
     path: outputPath,
   },
 };

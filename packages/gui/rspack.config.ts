@@ -15,7 +15,7 @@ const isDev = (process.env as any).NODE_ENV === 'development';
 const isProduction = !isDev;
 const outputPath = resolve(__dirname, isProduction ? '../../docs' : 'dist');
 const SERVER = process.env.SERVER || 'localhost';
-const publicPath = isProduction ? 'https://erikvullings.github.io/label-editor' : '';
+const publicPath = isProduction ? 'https://erikvullings.github.io/label-editor/' : '';
 const APP_TITLE = 'Label Editor';
 const APP_DESC = 'A webapp for labelling data in your browser, no setup required.';
 const APP_PORT = 3366;

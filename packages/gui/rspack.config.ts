@@ -15,7 +15,7 @@ const isDev = (process.env as any).NODE_ENV === 'development';
 const isProduction = !isDev;
 const outputPath = resolve(__dirname, isProduction ? '../../docs' : 'dist');
 const SERVER = process.env.SERVER || 'localhost';
-const publicPath = isProduction ? 'https://erikvullings.github.io/label-editor/' : '';
+const publicPath = isProduction ? 'https://erikvullings.github.io/label-editor/' : undefined;
 const APP_TITLE = 'Label Editor';
 const APP_DESC = 'A webapp for labelling data in your browser, no setup required.';
 const APP_PORT = 3366;
@@ -46,7 +46,7 @@ const configuration: Configuration = {
       title: APP_TITLE,
       publicPath,
       scriptLoading: 'defer',
-      minify: !isDev,
+      minify: isProduction,
       favicon: './src/favicon.ico',
       meta: {
         viewport: 'width=device-width, initial-scale=1',
@@ -62,12 +62,12 @@ const configuration: Configuration = {
       },
     }),
     new HotModuleReplacementPlugin(),
-    new LightningCssMinimizerRspackPlugin(),
+    new LightningCssMinimizerRspackPlugin({ removeUnusedLocalIdents: true }),
     new SwcJsMinimizerRspackPlugin({
       minimizerOptions: {
         compress: isProduction,
         minify: isProduction,
-        mangle: isProduction,
+        // mangle: isProduction,
       },
     }),
   ],
@@ -89,13 +89,6 @@ const configuration: Configuration = {
                 parser: {
                   syntax: 'typescript',
                   tsx: true,
-                },
-                transform: {
-                  react: {
-                    runtime: 'automatic',
-                    development: isDev,
-                    refresh: isDev,
-                  },
                 },
               },
               env: {
@@ -147,7 +140,7 @@ const configuration: Configuration = {
   },
   output: {
     filename: '[id].bundle.js',
-    publicPath: '',
+    publicPath: '.',
     path: outputPath,
   },
 };

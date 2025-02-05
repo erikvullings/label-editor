@@ -33,8 +33,8 @@ importers:
         specifier: ^1.3.5
         version: 1.3.5
       mithril-ui-form:
-        specifier: ^1.10.15
-        version: 1.10.15
+        specifier: ^1.10.16
+        version: 1.10.16(mithril-materialized@1.3.5)(mithril@2.2.13)
       mithril-ui-form-rating-plugin:
         specifier: ^0.7.6
         version: 0.7.6
@@ -1196,8 +1196,11 @@ packages:
   mithril-ui-form-rating-plugin@0.7.6:
     resolution: {integrity: sha512-gJoaVzUQgmjLJgvOFLow/AAYgP+OPt4P257uuhbnTFG0dyRSDzNwEdF7jB0jA+eAKBTTl/gEALctdwByrWUlZQ==}
 
-  mithril-ui-form@1.10.15:
-    resolution: {integrity: sha512-ydJVyoq8lO38hZX7esIwuATeT0xrBsWYC8qGoxLIl25vEBfd2cCqaUF63lODxglvNI0l2iUi6NI2NPByi8/eUQ==}
+  mithril-ui-form@1.10.16:
+    resolution: {integrity: sha512-A4BqF96eKM6XyVzcKS50iZ+kg+QaQuFBeRrm+/4vbwrcMuhnjNLoTjs9kWAWk/5B680P83TZdLUyiBhOOdjY4A==}
+    peerDependencies:
+      mithril: ^2.2.0
+      mithril-materialized: ^1.3.5
 
   mithril@2.2.13:
     resolution: {integrity: sha512-dfWFYmRJDXAROG6B1AsQXEwhSgFZ65Am/5Xj3oJ/R1wZtrC0W20P4sIAtFQB0SZsGwV7H2MiEJiFGmlUtXF1Ww==}
@@ -2950,8 +2953,10 @@ snapshots:
     dependencies:
       mithril: 2.2.13
 
-  mithril-ui-form@1.10.15:
+  mithril-ui-form@1.10.16(mithril-materialized@1.3.5)(mithril@2.2.13):
     dependencies:
+      mithril: 2.2.13
+      mithril-materialized: 1.3.5
       mithril-ui-form-plugin: 0.6.7
       slimdown-js: 1.0.0
 

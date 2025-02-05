@@ -28,7 +28,7 @@ export const LabelEditor: MeiosisComponent = () => {
       }
       const { article: data, annotation = {} as Annotation } = state;
       const highlighted = data && highlighter ? highlighter(data) : data;
-      const md = markdownTemplate && resolvePlaceholders(markdownTemplate, highlighted);
+      const md = markdownTemplate && highlighted ? resolvePlaceholders(markdownTemplate, highlighted) : '';
 
       const context = [data, { annotator }];
       return m(
